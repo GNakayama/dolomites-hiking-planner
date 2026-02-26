@@ -355,6 +355,8 @@
     } else if (state.currentStep === 3) {
       wrapper.appendChild(createStepConfiguration());
     } else if (state.currentStep === 4) {
+      wrapper.appendChild(createStepHutExclusion());
+    } else if (state.currentStep === 5) {
       wrapper.appendChild(createStepReview());
     }
 
@@ -369,7 +371,8 @@
     const labels = [
       "Start date",
       "Number of days",
-      "Optional filters",
+      "Distance & altitude",
+      "Exclude huts",
       "Huts & distances",
     ];
 
@@ -452,7 +455,7 @@
         renderAppShell();
         return;
       }
-      state.currentStep = 2;
+      state.currentStep = state.currentStep + 1;
       renderAppShell();
     });
 
@@ -513,7 +516,7 @@
     back.type = "button";
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
-      state.currentStep = 1;
+      state.currentStep = state.currentStep - 1;
       renderAppShell();
     });
 
@@ -535,7 +538,7 @@
       }
 
       // Move to step 3 (filters) - routes will be generated there
-      state.currentStep = 3;
+      state.currentStep = state.currentStep + 1;
       renderAppShell();
     });
 
@@ -552,7 +555,7 @@
 
     const label = document.createElement("div");
     label.className = "field-label";
-    label.textContent = `Step 4 · Choose your ${state.numDays}-day route to Belluno`;
+    label.textContent = `Step 5 · Choose your ${state.numDays}-day route to Belluno`;
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
@@ -686,7 +689,7 @@
     back.type = "button";
     back.innerHTML = '<span>←</span><span>Adjust days</span>';
     back.addEventListener("click", () => {
-      state.currentStep = 2;
+      state.currentStep = state.currentStep - 1;
       renderAppShell();
     });
 
@@ -714,12 +717,12 @@
 
     const label = document.createElement("div");
     label.className = "field-label";
-    label.textContent = "Step 3 · Optional filters & preferences";
+    label.textContent = "Step 3 · Distance & altitude limits";
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
     helper.textContent =
-      "Set constraints to filter route options. Leave empty to see all options.";
+      "Set maximum distance and ascent per day. Leave empty to see all options.";
 
     root.appendChild(label);
     root.appendChild(helper);
@@ -744,7 +747,6 @@
     distanceInput.value = state.maxDistancePerDay;
     distanceInput.addEventListener("input", (e) => {
       state.maxDistancePerDay = e.target.value;
-      // Routes will be generated when clicking "Generate routes" button
     });
 
     distanceGroup.appendChild(distanceLabel);
@@ -777,7 +779,6 @@
     altitudeInput.value = state.maxAltitudePerDay;
     altitudeInput.addEventListener("input", (e) => {
       state.maxAltitudePerDay = e.target.value;
-      // Don't regenerate routes here - wait for user to click "Generate routes"
     });
 
     altitudeGroup.appendChild(altitudeLabel);
@@ -790,18 +791,57 @@
       altitudeGroup.appendChild(error);
     }
 
+    root.appendChild(distanceGroup);
+    root.appendChild(altitudeGroup);
+
+    // Buttons
+    const buttons = document.createElement("div");
+    buttons.className = "button-row";
+
+    const back = document.createElement("button");
+    back.className = "btn";
+    back.type = "button";
+    back.innerHTML = '<span>←</span><span>Back</span>';
+    back.addEventListener("click", () => {
+      state.currentStep = state.currentStep - 1;
+      renderAppShell();
+    });
+
+    const next = document.createElement("button");
+    next.className = "btn btn-primary";
+    next.type = "button";
+    next.innerHTML = '<span>Next</span><span>→</span>';
+    next.addEventListener("click", () => {
+      state.currentStep = state.currentStep + 1;
+      renderAppShell();
+    });
+
+    buttons.appendChild(back);
+    buttons.appendChild(next);
+    root.appendChild(buttons);
+
+    return root;
+  }
+
+  function createStepHutExclusion() {
+    const root = document.createElement("div");
+    root.className = "stack-sm";
+
+    const label = document.createElement("div");
+    label.className = "field-label";
+    label.textContent = "Step 4 · Exclude huts";
+
+    const helper = document.createElement("div");
+    helper.className = "field-helper";
+    helper.textContent = "Select huts you want to avoid. Routes using these huts will be filtered out.";
+
+    root.appendChild(label);
+    root.appendChild(helper);
+
     // Excluded huts
     const hutsGroup = document.createElement("div");
     hutsGroup.className = "stack-sm";
     hutsGroup.style.marginTop = "0.75rem";
-
-    const hutsLabel = document.createElement("label");
-    hutsLabel.className = "field-label";
-    hutsLabel.textContent = "Exclude huts from routes";
-
-    const hutsHelper = document.createElement("div");
-    hutsHelper.className = "field-helper";
-    hutsHelper.textContent = "Select huts you want to avoid. Routes using these huts will be filtered out.";
 
     const hutsCheckboxes = document.createElement("div");
     hutsCheckboxes.className = "huts-checkboxes";
@@ -813,45 +853,43 @@
     const uniqueHuts = [...new Set(allHuts)];
 
     uniqueHuts.forEach((hut) => {
+      const isExcluded = state.excludedHuts.includes(hut);
       const checkboxContainer = document.createElement("label");
-      checkboxContainer.className = "checkbox-container";
-      checkboxContainer.style.display = "flex";
-      checkboxContainer.style.alignItems = "center";
-      checkboxContainer.style.gap = "0.5rem";
-      checkboxContainer.style.marginBottom = "0.5rem";
-      checkboxContainer.style.cursor = "pointer";
+      checkboxContainer.className = `hut-checkbox ${isExcluded ? "hut-checkbox-selected" : ""}`;
+      checkboxContainer.setAttribute("for", `hut-${hut.replace(/\s+/g, "-")}`);
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
+      checkbox.id = `hut-${hut.replace(/\s+/g, "-")}`;
       checkbox.value = hut;
-      checkbox.checked = state.excludedHuts.includes(hut);
-        checkbox.addEventListener("change", (e) => {
-          if (e.target.checked) {
-            if (!state.excludedHuts.includes(hut)) {
-              state.excludedHuts.push(hut);
-            }
-          } else {
-            state.excludedHuts = state.excludedHuts.filter((h) => h !== hut);
+      checkbox.checked = isExcluded;
+      checkbox.className = "hut-checkbox-input";
+      checkbox.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          if (!state.excludedHuts.includes(hut)) {
+            state.excludedHuts.push(hut);
           }
-          // Don't regenerate routes here - wait for user to click "Generate routes"
-        });
+        } else {
+          state.excludedHuts = state.excludedHuts.filter((h) => h !== hut);
+        }
+        // Update visual state
+        if (e.target.checked) {
+          checkboxContainer.classList.add("hut-checkbox-selected");
+        } else {
+          checkboxContainer.classList.remove("hut-checkbox-selected");
+        }
+      });
 
       const checkboxLabel = document.createElement("span");
+      checkboxLabel.className = "hut-checkbox-label";
       checkboxLabel.textContent = hut;
-      checkboxLabel.style.fontSize = "0.8rem";
-      checkboxLabel.style.color = "var(--text-soft)";
 
       checkboxContainer.appendChild(checkbox);
       checkboxContainer.appendChild(checkboxLabel);
       hutsCheckboxes.appendChild(checkboxContainer);
     });
 
-    hutsGroup.appendChild(hutsLabel);
-    hutsGroup.appendChild(hutsHelper);
     hutsGroup.appendChild(hutsCheckboxes);
-
-    root.appendChild(distanceGroup);
-    root.appendChild(altitudeGroup);
     root.appendChild(hutsGroup);
 
     // Buttons
@@ -863,7 +901,7 @@
     back.type = "button";
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
-      state.currentStep = 2;
+      state.currentStep = state.currentStep - 1;
       renderAppShell();
     });
 
@@ -912,9 +950,15 @@
       state.selectedCombinationIndex = null;
       state.carouselIndex = 0; // Reset carousel to first option
       state.itinerary = [];
-      state.currentStep = 4; // Move to route selection
+      state.currentStep = 5; // Move to route selection
       renderAppShell();
     });
+
+    buttons.appendChild(back);
+    buttons.appendChild(next);
+    root.appendChild(buttons);
+
+    return root;
 
     buttons.appendChild(back);
     buttons.appendChild(next);
