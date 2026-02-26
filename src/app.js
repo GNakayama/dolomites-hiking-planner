@@ -13,6 +13,7 @@
 // Refactored to use ES modules for better maintainability and testability.
 
 import { ALTA_VIA_STAGES, MIN_DAYS, MAX_DAYS } from './data/alta-via-1.js';
+import { getHutBookingInfo } from './data/hut-booking-links.js';
 import { generateAllCombinations } from './utils/route-generator.js';
 import { applyFilters } from './utils/filters.js';
 import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
@@ -767,11 +768,32 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     label.className = "field-label";
     label.textContent = "Step 4 · Exclude huts";
 
+    // Show selected dates prominently
+    let dateContext = "";
+    if (state.startDate && state.numDays) {
+      const startDate = new Date(state.startDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + parseInt(state.numDays, 10) - 1);
+      dateContext = `Checking availability for: ${formatShortDate(state.startDate)} → ${formatShortDate(endDate.toISOString().slice(0, 10))}`;
+    }
+
+    const dateInfo = document.createElement("div");
+    dateInfo.className = "hut-exclusion-dates";
+    if (dateContext) {
+      dateInfo.innerHTML = `<span class="accent-text">📅 ${dateContext}</span>`;
+    } else {
+      dateInfo.innerHTML = '<span class="muted-text">Select dates in Step 1 to see date context</span>';
+    }
+
     const helper = document.createElement("div");
     helper.className = "field-helper";
-    helper.textContent = "Select huts you want to avoid. Routes using these huts will be filtered out.";
+    helper.innerHTML = `
+      <p style="margin: 0 0 0.5rem 0;">Click "Check Availability" for each hut to verify bookings, then exclude any that are fully booked.</p>
+      <p style="margin: 0; font-size: 0.85rem;" class="muted-text">💡 Tip: Open booking links in new tabs, check availability, then return here to exclude booked huts.</p>
+    `;
 
     root.appendChild(label);
+    root.appendChild(dateInfo);
     root.appendChild(helper);
 
     // Excluded huts
@@ -790,6 +812,13 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
     uniqueHuts.forEach((hut) => {
       const isExcluded = state.excludedHuts.includes(hut);
+      const bookingInfo = getHutBookingInfo(hut);
+      
+      // Create hut card container
+      const hutCard = document.createElement("div");
+      hutCard.className = `hut-exclusion-card ${isExcluded ? "hut-exclusion-card-excluded" : ""}`;
+
+      // Checkbox and label container (hut title)
       const checkboxContainer = document.createElement("label");
       checkboxContainer.className = `hut-checkbox ${isExcluded ? "hut-checkbox-selected" : ""}`;
       checkboxContainer.setAttribute("for", `hut-${hut.replace(/\s+/g, "-")}`);
@@ -811,8 +840,10 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
         // Update visual state
         if (e.target.checked) {
           checkboxContainer.classList.add("hut-checkbox-selected");
+          hutCard.classList.add("hut-exclusion-card-excluded");
         } else {
           checkboxContainer.classList.remove("hut-checkbox-selected");
+          hutCard.classList.remove("hut-exclusion-card-excluded");
         }
       });
 
@@ -822,7 +853,41 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
       checkboxContainer.appendChild(checkbox);
       checkboxContainer.appendChild(checkboxLabel);
-      hutsCheckboxes.appendChild(checkboxContainer);
+
+      // Add checkbox/title to card
+      hutCard.appendChild(checkboxContainer);
+
+      // Booking link button (below the title)
+      const bookingButton = document.createElement("a");
+      bookingButton.className = "hut-booking-link";
+      bookingButton.target = "_blank";
+      bookingButton.rel = "noopener noreferrer";
+      bookingButton.href = bookingInfo?.bookingUrl || bookingInfo?.website || "#";
+      
+      if (!bookingInfo) {
+        bookingButton.style.opacity = "0.5";
+        bookingButton.style.pointerEvents = "none";
+        bookingButton.title = "Booking link not available";
+      }
+      
+      bookingButton.innerHTML = '<span>🔗</span><span>Check Availability</span>';
+      bookingButton.addEventListener("click", (e) => {
+        // Don't prevent default - let it open the link
+        // But we could add analytics or tracking here in the future
+      });
+
+      // Add booking button below the title
+      hutCard.appendChild(bookingButton);
+
+      // Add note if available
+      if (bookingInfo?.note) {
+        const note = document.createElement("div");
+        note.className = "hut-booking-note";
+        note.textContent = bookingInfo.note;
+        hutCard.appendChild(note);
+      }
+
+      hutsCheckboxes.appendChild(hutCard);
     });
 
     hutsGroup.appendChild(hutsCheckboxes);
