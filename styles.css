@@ -266,48 +266,132 @@ body {
 
 .wizard-steps {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.wizard-steps::-webkit-scrollbar {
+  height: 4px;
+}
+
+.wizard-steps::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 2px;
+}
+
+.wizard-steps::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 2px;
 }
 
 .wizard-step {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  font-size: 0.72rem;
-  color: var(--text-soft);
-  background: rgba(15, 23, 42, 0.7);
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  position: relative;
 }
 
 .wizard-step-badge {
-  width: 1.05rem;
-  height: 1.05rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.6);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: rgba(15, 23, 42, 0.7);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.wizard-step-active {
-  border-color: rgba(34, 197, 94, 0.75);
-  color: var(--accent-strong);
-  background: var(--accent-soft);
+.wizard-step-label {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  text-align: center;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.2s ease;
+  word-break: break-word;
 }
 
 .wizard-step-active .wizard-step-badge {
-  border-color: rgba(34, 197, 94, 0.75);
-  background: rgba(34, 197, 94, 0.2);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ecfdf5;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
 }
 
-.wizard-step-done {
-  border-style: dashed;
-  opacity: 0.85;
+.wizard-step-active .wizard-step-label {
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+
+.wizard-step-done .wizard-step-badge {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-strong);
+}
+
+.wizard-step-connector {
+  flex: 1;
+  min-width: 1rem;
+  height: 2px;
+  margin-top: 1rem;
+  border-top: 2px dashed var(--border-subtle);
+  align-self: flex-start;
+}
+
+.wizard-step-active ~ .wizard-step-connector,
+.wizard-step-done ~ .wizard-step-connector {
+  border-top-color: rgba(34, 197, 94, 0.4);
+}
+
+@media (max-width: 900px) {
+  .wizard-steps {
+    gap: 0.3rem;
+  }
+
+  .wizard-step-badge {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+
+  .wizard-step-label {
+    font-size: 0.65rem;
+  }
+
+  .wizard-step-connector {
+    min-width: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .wizard-steps {
+    gap: 0.2rem;
+  }
+
+  .wizard-step-badge {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  .wizard-step-label {
+    font-size: 0.6rem;
+  }
 }
 
 .error-text {

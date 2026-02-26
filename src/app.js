@@ -373,7 +373,7 @@
       "Number of days",
       "Distance & altitude",
       "Exclude huts",
-      "Huts & distances",
+      "Huts & distance",
     ];
 
     labels.forEach((label, index) => {
@@ -387,16 +387,26 @@
         step.classList.add("wizard-step-done");
       }
 
-      const badge = document.createElement("span");
+      const badge = document.createElement("div");
       badge.className = "wizard-step-badge";
       badge.textContent = stepIndex;
 
-      const text = document.createElement("span");
+      const text = document.createElement("div");
+      text.className = "wizard-step-label";
       text.textContent = label;
 
       step.appendChild(badge);
       step.appendChild(text);
-      steps.appendChild(step);
+
+      // Add dashed line connector (except for last step)
+      if (index < labels.length - 1) {
+        const connector = document.createElement("div");
+        connector.className = "wizard-step-connector";
+        steps.appendChild(step);
+        steps.appendChild(connector);
+      } else {
+        steps.appendChild(step);
+      }
     });
 
     return steps;
