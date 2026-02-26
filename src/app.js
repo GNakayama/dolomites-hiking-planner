@@ -25,6 +25,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
   // Simple in-memory state for the wizard.
   const state = {
+    currentView: "wizard", // "wizard" or "plan"
     currentStep: 1,
     startDate: "",
     numDays: "",
@@ -59,7 +60,14 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     container.className = "app-container";
 
     container.appendChild(createHeader());
-    container.appendChild(createMain());
+
+    // Show either wizard view or hiking plan view
+    if (state.currentView === "plan" && state.itinerary.length > 0) {
+      container.appendChild(createHikingPlanView());
+    } else {
+      container.appendChild(createMain());
+    }
+
     container.appendChild(createFooter());
 
     root.appendChild(container);
@@ -1121,6 +1129,19 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     stack.appendChild(summaryRow);
     stack.appendChild(list);
 
+    // Add "Generate Hiking Plan" button
+    const actionButton = document.createElement("button");
+    actionButton.className = "btn btn-primary";
+    actionButton.type = "button";
+    actionButton.style.width = "100%";
+    actionButton.style.marginTop = "1.5rem";
+    actionButton.innerHTML = '<span>🎒 Generate Hiking Plan</span><span>→</span>';
+    actionButton.addEventListener("click", () => {
+      state.currentView = "plan";
+      renderAppShell();
+    });
+
+    stack.appendChild(actionButton);
     body.appendChild(stack);
     return panel.root;
   }
@@ -1167,6 +1188,336 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     pill.appendChild(text);
 
     return pill;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hiking Plan View (Full Page)
+  // ---------------------------------------------------------------------------
+
+  function createHikingPlanView() {
+    const main = document.createElement("main");
+    main.className = "hiking-plan-view";
+
+    const container = document.createElement("div");
+    container.className = "hiking-plan-container";
+
+    // Header with back button
+    const header = document.createElement("div");
+    header.className = "hiking-plan-header";
+
+    const backButton = document.createElement("button");
+    backButton.className = "btn";
+    backButton.type = "button";
+    backButton.innerHTML = '<span>←</span><span>Back to Planner</span>';
+    backButton.addEventListener("click", () => {
+      state.currentView = "wizard";
+      renderAppShell();
+    });
+
+    const title = document.createElement("h1");
+    title.className = "hiking-plan-title";
+    title.textContent = "Your Alta Via 1 Hiking Plan";
+
+    header.appendChild(backButton);
+    header.appendChild(title);
+    container.appendChild(header);
+
+    // Plan summary
+    const summary = createPlanSummary();
+    container.appendChild(summary);
+
+    // Tabs for different sections
+    const tabsContainer = createPlanTabs();
+    container.appendChild(tabsContainer);
+
+    main.appendChild(container);
+    return main;
+  }
+
+  function createPlanSummary() {
+    const summary = document.createElement("div");
+    summary.className = "plan-summary";
+
+    const firstDay = state.itinerary[0];
+    const lastDay = state.itinerary[state.itinerary.length - 1];
+
+    const dates = document.createElement("div");
+    dates.className = "plan-summary-dates";
+    dates.textContent = `${formatShortDate(firstDay.date)} → ${formatShortDate(
+      lastDay.date
+    )} · ${state.itinerary.length} hiking days`;
+
+    const stats = document.createElement("div");
+    stats.className = "plan-summary-stats";
+
+    const totalDistance = state.itinerary.reduce(
+      (sum, day) => sum + day.stage.distanceKm,
+      0
+    );
+    const totalAscent = state.itinerary.reduce(
+      (sum, day) => sum + day.stage.ascentM,
+      0
+    );
+
+    const distanceStat = document.createElement("div");
+    distanceStat.className = "plan-stat";
+    distanceStat.innerHTML = `<span class="plan-stat-value">${totalDistance.toFixed(1)}</span><span class="plan-stat-label">km total</span>`;
+
+    const ascentStat = document.createElement("div");
+    ascentStat.className = "plan-stat";
+    ascentStat.innerHTML = `<span class="plan-stat-value">${totalAscent}</span><span class="plan-stat-label">m ascent</span>`;
+
+    const daysStat = document.createElement("div");
+    daysStat.className = "plan-stat";
+    daysStat.innerHTML = `<span class="plan-stat-value">${state.itinerary.length}</span><span class="plan-stat-label">days</span>`;
+
+    stats.appendChild(distanceStat);
+    stats.appendChild(ascentStat);
+    stats.appendChild(daysStat);
+
+    summary.appendChild(dates);
+    summary.appendChild(stats);
+
+    return summary;
+  }
+
+  function createPlanTabs() {
+    const tabsWrapper = document.createElement("div");
+    tabsWrapper.className = "plan-tabs-wrapper";
+
+    // Tab navigation
+    const tabsNav = document.createElement("div");
+    tabsNav.className = "plan-tabs-nav";
+
+    const tabButtons = [
+      { id: "overview", label: "Overview" },
+      { id: "navigation", label: "Navigation" },
+      { id: "huts", label: "Huts & Booking" },
+      { id: "preparation", label: "Preparation" },
+      { id: "tips", label: "Tips & Points of Interest" },
+    ];
+
+    let activeTab = "overview";
+
+    tabButtons.forEach((tab) => {
+      const button = document.createElement("button");
+      button.className = `plan-tab-button ${activeTab === tab.id ? "active" : ""}`;
+      button.textContent = tab.label;
+      button.addEventListener("click", () => {
+        activeTab = tab.id;
+        renderPlanTabContent(tabsContent, activeTab);
+        // Update active state
+        tabsNav.querySelectorAll(".plan-tab-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        button.classList.add("active");
+      });
+      tabsNav.appendChild(button);
+    });
+
+    // Tab content area
+    const tabsContent = document.createElement("div");
+    tabsContent.className = "plan-tabs-content";
+
+    // Initial content
+    renderPlanTabContent(tabsContent, activeTab);
+
+    tabsWrapper.appendChild(tabsNav);
+    tabsWrapper.appendChild(tabsContent);
+
+    return tabsWrapper;
+  }
+
+  function renderPlanTabContent(container, tabId) {
+    container.innerHTML = "";
+
+    switch (tabId) {
+      case "overview":
+        container.appendChild(createOverviewTab());
+        break;
+      case "navigation":
+        container.appendChild(createNavigationTab());
+        break;
+      case "huts":
+        container.appendChild(createHutsTab());
+        break;
+      case "preparation":
+        container.appendChild(createPreparationTab());
+        break;
+      case "tips":
+        container.appendChild(createTipsTab());
+        break;
+    }
+  }
+
+  function createOverviewTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Day-by-Day Itinerary";
+
+    const itineraryList = document.createElement("div");
+    itineraryList.className = "plan-itinerary-list";
+
+    state.itinerary.forEach((day) => {
+      const dayCard = document.createElement("div");
+      dayCard.className = "plan-day-card";
+
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "plan-day-header";
+
+      const dayTitle = document.createElement("div");
+      dayTitle.className = "plan-day-title";
+      dayTitle.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const dayMeta = document.createElement("div");
+      dayMeta.className = "plan-day-meta";
+      dayMeta.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m ascent`;
+
+      dayHeader.appendChild(dayTitle);
+      dayHeader.appendChild(dayMeta);
+
+      const route = document.createElement("div");
+      route.className = "plan-day-route";
+      if (day.allStages && day.allStages.length > 1) {
+        const stagesList = day.allStages
+          .map((s, idx) => (idx === 0 ? s.from : s.to))
+          .join(" → ");
+        route.textContent = stagesList;
+      } else {
+        route.textContent = `${day.stage.from} → ${day.stage.to}`;
+      }
+
+      const hut = document.createElement("div");
+      hut.className = "plan-day-hut";
+      if (day.stage.hut === "End in valley") {
+        hut.textContent = "Finish in the valley (no hut booking needed)";
+      } else {
+        hut.textContent = `Overnight: ${day.stage.hut}`;
+      }
+
+      dayCard.appendChild(dayHeader);
+      dayCard.appendChild(route);
+      dayCard.appendChild(hut);
+
+      itineraryList.appendChild(dayCard);
+    });
+
+    content.appendChild(heading);
+    content.appendChild(itineraryList);
+
+    return content;
+  }
+
+  function createNavigationTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Navigation & Maps";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "plan-placeholder";
+    placeholder.innerHTML = `
+      <p>🚧 Coming soon: Interactive map, GPX download, and elevation profiles</p>
+      <p class="muted-text">This section will include:</p>
+      <ul>
+        <li>Interactive route map</li>
+        <li>GPX file download</li>
+        <li>Elevation profile charts</li>
+        <li>Time estimates</li>
+      </ul>
+    `;
+
+    content.appendChild(heading);
+    content.appendChild(placeholder);
+
+    return content;
+  }
+
+  function createHutsTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Huts & Booking Information";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "plan-placeholder";
+    placeholder.innerHTML = `
+      <p>🚧 Coming soon: Detailed hut information and booking links</p>
+      <p class="muted-text">This section will include:</p>
+      <ul>
+        <li>Hut facilities and services</li>
+        <li>Meal information</li>
+        <li>Booking links</li>
+        <li>Contact information</li>
+        <li>Arrival time recommendations</li>
+      </ul>
+    `;
+
+    content.appendChild(heading);
+    content.appendChild(placeholder);
+
+    return content;
+  }
+
+  function createPreparationTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Preparation & Supplies";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "plan-placeholder";
+    placeholder.innerHTML = `
+      <p>🚧 Coming soon: Packing lists and preparation guides</p>
+      <p class="muted-text">This section will include:</p>
+      <ul>
+        <li>Dynamic packing list generator</li>
+        <li>Food planning suggestions</li>
+        <li>Weather-based recommendations</li>
+        <li>Essential gear checklist</li>
+      </ul>
+    `;
+
+    content.appendChild(heading);
+    content.appendChild(placeholder);
+
+    return content;
+  }
+
+  function createTipsTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Tips & Points of Interest";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "plan-placeholder";
+    placeholder.innerHTML = `
+      <p>🚧 Coming soon: Scenic detours and hiking tips</p>
+      <p class="muted-text">This section will include:</p>
+      <ul>
+        <li>Scenic viewpoints and detours</li>
+        <li>Photography tips</li>
+        <li>Historical context</li>
+        <li>Local tips and recommendations</li>
+      </ul>
+    `;
+
+    content.appendChild(heading);
+    content.appendChild(placeholder);
+
+    return content;
   }
 
   // ---------------------------------------------------------------------------
