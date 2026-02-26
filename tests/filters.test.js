@@ -3,7 +3,7 @@ import {
   filterByMinDistance,
   filterByMaxDistance,
   filterByMaxAltitude,
-  filterByExcludedHuts,
+  filterByIncludedHuts,
   filterByHutAvailability,
   applyFilters,
 } from '../src/utils/filters.js';
@@ -126,43 +126,6 @@ describe('Filters', () => {
     });
   });
 
-  describe('filterByExcludedHuts', () => {
-    it('should return all combinations when no huts are excluded', () => {
-      const result = filterByExcludedHuts(mockCombinations, []);
-      expect(result).toEqual(mockCombinations);
-    });
-
-    it('should return all combinations when excludedHuts is null or undefined', () => {
-      expect(filterByExcludedHuts(mockCombinations, null)).toEqual(mockCombinations);
-      expect(filterByExcludedHuts(mockCombinations, undefined)).toEqual(mockCombinations);
-    });
-
-    it('should filter out combinations using excluded huts', () => {
-      const result = filterByExcludedHuts(mockCombinations, ['Rifugio A']);
-      
-      // First and second combinations use Rifugio A, should be filtered
-      // Third combination should pass
-      expect(result.length).toBe(1);
-      expect(result[0]).toEqual(mockCombinations[2]);
-    });
-
-    it('should filter based on all days in combination', () => {
-      const result = filterByExcludedHuts(mockCombinations, ['Rifugio B']);
-      
-      // First and third combinations use Rifugio B, should be filtered
-      // Second combination should pass
-      expect(result.length).toBe(1);
-      expect(result[0]).toEqual(mockCombinations[1]);
-    });
-
-    it('should handle multiple excluded huts', () => {
-      const result = filterByExcludedHuts(mockCombinations, ['Rifugio A', 'Rifugio B']);
-      
-      // All combinations use either A or B, should all be filtered
-      expect(result).toEqual([]);
-    });
-  });
-
   describe('applyFilters', () => {
     it('should return all combinations when no filters are provided', () => {
       const result = applyFilters(mockCombinations, {});
@@ -208,10 +171,13 @@ describe('Filters', () => {
       expect(result[0]).toEqual(mockCombinations[2]);
     });
 
-    it('should apply excluded huts filter', () => {
-      const filters = { excludedHuts: ['Rifugio A'] };
+    it('should apply included huts filter', () => {
+      const filters = { includedHuts: ['Rifugio B', 'Rifugio C'] };
       const result = applyFilters(mockCombinations, filters);
       
+      // First combination: Rifugio A, B (A not included) - filtered
+      // Second combination: Rifugio A, C (A not included) - filtered
+      // Third combination: Rifugio B, C (both included) - passes
       expect(result.length).toBe(1);
       expect(result[0]).toEqual(mockCombinations[2]);
     });
@@ -220,13 +186,13 @@ describe('Filters', () => {
       const filters = {
         maxDistancePerDay: '15',
         maxAltitudePerDay: '700',
-        excludedHuts: ['Rifugio B'],
+        includedHuts: ['Rifugio A'],
       };
       const result = applyFilters(mockCombinations, filters);
       
-      // First combination: distance 15,12 (pass), altitude 800,600 (800 > 700, fails), hut B (excluded, fails) - FILTERED
+      // First combination: distance 15,12 (pass), altitude 800,600 (800 > 700, fails), hut A,B (B not included, fails) - FILTERED
       // Second combination: distance 20,18 (both > 15, fails) - FILTERED
-      // Third combination: distance 10,11 (pass), altitude 500,550 (pass), hut B,C (B excluded, fails) - FILTERED
+      // Third combination: distance 10,11 (pass), altitude 500,550 (pass), hut B,C (B not included, fails) - FILTERED
       // All should be filtered out
       expect(result.length).toBe(0);
     });

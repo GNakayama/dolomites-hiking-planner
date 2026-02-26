@@ -15,7 +15,7 @@ describe('Integration Tests', () => {
       const filters = {
         maxDistancePerDay: '20',
         maxAltitudePerDay: '1000',
-        excludedHuts: [],
+        includedHuts: [],
       };
       const filtered = applyFilters(allCombinations, filters);
       expect(filtered.length).toBeGreaterThanOrEqual(0);
@@ -31,21 +31,23 @@ describe('Integration Tests', () => {
       }
     });
 
-    it('should filter out combinations with excluded huts', () => {
+    it('should filter to only combinations with included huts', () => {
       const allCombinations = generateAllCombinations(6);
       
       // Get a hut that exists in some combinations
       const testHut = ALTA_VIA_STAGES[0].hut;
       
       const filters = {
-        excludedHuts: [testHut],
+        includedHuts: [testHut],
       };
       const filtered = applyFilters(allCombinations, filters);
       
-      // Verify no combination uses the excluded hut
+      // Verify all combinations use only the included hut (or "End in valley")
       filtered.forEach(combo => {
         combo.forEach(day => {
-          expect(day.hut).not.toBe(testHut);
+          if (day.hut !== 'End in valley') {
+            expect(day.hut).toBe(testHut);
+          }
         });
       });
     });
@@ -73,7 +75,7 @@ describe('Integration Tests', () => {
       const filters = {
         maxDistancePerDay: '5', // Very restrictive
         maxAltitudePerDay: '100', // Very restrictive
-        excludedHuts: ALTA_VIA_STAGES.map(s => s.hut).filter(h => h !== 'End in valley'),
+        includedHuts: [], // Empty means include all, but with restrictive distance/altitude
       };
       const filtered = applyFilters(allCombinations, filters);
       

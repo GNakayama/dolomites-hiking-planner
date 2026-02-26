@@ -32,13 +32,20 @@ export function filterByMaxAltitude(combinations, maxAltitudeM) {
 }
 
 /**
- * Filters combinations by excluded huts
+ * Filters combinations by included huts
+ * If includedHuts is empty, all huts are allowed (default behavior)
+ * If includedHuts has values, only routes using those huts are allowed
  */
-export function filterByExcludedHuts(combinations, excludedHuts) {
-  if (!excludedHuts || excludedHuts.length === 0) return combinations;
+export function filterByIncludedHuts(combinations, includedHuts) {
+  if (!includedHuts || includedHuts.length === 0) return combinations;
   
   return combinations.filter((combo) =>
-    combo.every((day) => !excludedHuts.includes(day.hut))
+    combo.every((day) => {
+      // "End in valley" is always allowed (no hut booking needed)
+      if (day.hut === "End in valley") return true;
+      // Check if the hut is in the included list
+      return includedHuts.includes(day.hut);
+    })
   );
 }
 
@@ -116,8 +123,8 @@ export function applyFilters(combinations, filters) {
     }
   }
   
-  if (filters.excludedHuts && filters.excludedHuts.length > 0) {
-    filtered = filterByExcludedHuts(filtered, filters.excludedHuts);
+  if (filters.includedHuts && filters.includedHuts.length > 0) {
+    filtered = filterByIncludedHuts(filtered, filters.includedHuts);
   }
   
   // Filter by hut availability (requires startDate)

@@ -69,7 +69,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
         minDistancePerDay: state.minDistancePerDay,
         maxDistancePerDay: state.maxDistancePerDay,
         maxAltitudePerDay: state.maxAltitudePerDay,
-        excludedHuts: state.excludedHuts,
+        includedHuts: state.includedHuts,
         hutAvailability: state.hutAvailability,
         selectedCombinationIndex: state.selectedCombinationIndex,
         carouselIndex: state.carouselIndex,
@@ -137,13 +137,14 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     minDistancePerDay: "", // Min km per day
     maxDistancePerDay: "", // Max km per day
     maxAltitudePerDay: "", // Max ascent meters per day
-    excludedHuts: [], // Array of hut names to exclude
+    includedHuts: [], // Array of hut names to include (empty = include all)
     hutAvailability: {}, // Object: { "Rifugio X": ["2024-07-01", "2024-07-02", ...] }
     errors: {
       startDate: "",
       numDays: "",
       maxDistance: "",
       maxAltitude: "",
+      includedHuts: "",
     },
   };
 
@@ -162,7 +163,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
           minDistancePerDay: state.minDistancePerDay,
           maxDistancePerDay: state.maxDistancePerDay,
           maxAltitudePerDay: state.maxAltitudePerDay,
-          excludedHuts: state.excludedHuts,
+          includedHuts: state.includedHuts,
         });
         state.allCombinations = filtered.slice(0, 10);
         
@@ -420,7 +421,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
       "Start date",
       "Number of days",
       "Distance & altitude",
-      "Exclude huts",
+      "Select huts",
       "Huts & distance",
     ];
 
@@ -925,7 +926,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
 
     const label = document.createElement("div");
     label.className = "field-label";
-    label.textContent = "Step 4 · Exclude huts";
+    label.textContent = "Step 4 · Select huts to include";
 
     // Show selected dates prominently
     let dateContext = "";
@@ -949,18 +950,18 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     helper.innerHTML = `
       <p style="margin: 0 0 0.5rem 0;">Click "Check Availability" for each hut to verify bookings. You can:</p>
       <ul style="margin: 0.5rem 0; padding-left: 1.5rem; font-size: 0.85rem;">
-        <li>Exclude huts that are fully booked</li>
+        <li>Check the boxes for huts you want to include in your route</li>
         <li>Set specific available dates for each hut (routes will only use huts on their available dates)</li>
-        <li>Leave dates empty to assume the hut is always available</li>
+        <li>Leave all boxes unchecked to allow all huts (default)</li>
       </ul>
-      <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;" class="muted-text">💡 Tip: Open booking links in new tabs, check availability, then return here to set dates or exclude huts.</p>
+      <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;" class="muted-text">💡 Tip: Open booking links in new tabs, check availability, then return here to select huts and set dates.</p>
     `;
 
     root.appendChild(label);
     root.appendChild(dateInfo);
     root.appendChild(helper);
 
-    // Excluded huts
+    // Included huts
     const hutsGroup = document.createElement("div");
     hutsGroup.className = "stack-sm";
     hutsGroup.style.marginTop = "0.75rem";
@@ -975,40 +976,44 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     const uniqueHuts = [...new Set(allHuts)];
 
     uniqueHuts.forEach((hut) => {
-      const isExcluded = state.excludedHuts.includes(hut);
+      const isIncluded = state.includedHuts.includes(hut);
       const bookingInfo = getHutBookingInfo(hut);
       
       // Create hut card container
       const hutCard = document.createElement("div");
-      hutCard.className = `hut-exclusion-card ${isExcluded ? "hut-exclusion-card-excluded" : ""}`;
+      hutCard.className = `hut-exclusion-card ${isIncluded ? "hut-exclusion-card-included" : ""}`;
 
       // Checkbox and label container (hut title)
       const checkboxContainer = document.createElement("label");
-      checkboxContainer.className = `hut-checkbox ${isExcluded ? "hut-checkbox-selected" : ""}`;
+      checkboxContainer.className = `hut-checkbox ${isIncluded ? "hut-checkbox-selected" : ""}`;
       checkboxContainer.setAttribute("for", `hut-${hut.replace(/\s+/g, "-")}`);
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.id = `hut-${hut.replace(/\s+/g, "-")}`;
       checkbox.value = hut;
-      checkbox.checked = isExcluded;
+      checkbox.checked = isIncluded;
       checkbox.className = "hut-checkbox-input";
       checkbox.addEventListener("change", (e) => {
         if (e.target.checked) {
-          if (!state.excludedHuts.includes(hut)) {
-            state.excludedHuts.push(hut);
+          if (!state.includedHuts.includes(hut)) {
+            state.includedHuts.push(hut);
           }
         } else {
-          state.excludedHuts = state.excludedHuts.filter((h) => h !== hut);
+          state.includedHuts = state.includedHuts.filter((h) => h !== hut);
         }
+        // Clear validation error when huts change
+        state.errors.includedHuts = "";
         // Update visual state
         if (e.target.checked) {
           checkboxContainer.classList.add("hut-checkbox-selected");
-          hutCard.classList.add("hut-exclusion-card-excluded");
+          hutCard.classList.add("hut-exclusion-card-included");
         } else {
           checkboxContainer.classList.remove("hut-checkbox-selected");
-          hutCard.classList.remove("hut-exclusion-card-excluded");
+          hutCard.classList.remove("hut-exclusion-card-included");
         }
+        saveStateToStorage();
+        renderAppShell();
       });
 
       const checkboxLabel = document.createElement("span");
@@ -1314,6 +1319,15 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     });
 
     hutsGroup.appendChild(hutsCheckboxes);
+    
+    // Show validation error if present
+    if (state.errors.includedHuts) {
+      const error = document.createElement("div");
+      error.className = "error-text";
+      error.textContent = state.errors.includedHuts;
+      hutsGroup.appendChild(error);
+    }
+    
     root.appendChild(hutsGroup);
 
     // Buttons
@@ -1341,6 +1355,17 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
         return;
       }
 
+      // Validate: if huts are selected, must have at least as many huts as days
+      state.errors.includedHuts = "";
+      if (state.includedHuts && state.includedHuts.length > 0) {
+        if (state.includedHuts.length < parsed) {
+          state.errors.includedHuts = `You selected ${state.includedHuts.length} hut${state.includedHuts.length === 1 ? '' : 's'}, but your trip is ${parsed} day${parsed === 1 ? '' : 's'}. Please select at least ${parsed} hut${parsed === 1 ? '' : 's'} or leave all unchecked to allow all huts.`;
+          saveStateToStorage();
+          renderAppShell();
+          return;
+        }
+      }
+
       // Generate all possible hut combinations for the selected number of days
       // Apply filters and limit to first 10
       const allCombos = generateAllCombinations(parsed);
@@ -1348,7 +1373,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
         minDistancePerDay: state.minDistancePerDay,
         maxDistancePerDay: state.maxDistancePerDay,
         maxAltitudePerDay: state.maxAltitudePerDay,
-        excludedHuts: state.excludedHuts,
+        includedHuts: state.includedHuts,
         hutAvailability: state.hutAvailability,
         startDate: state.startDate,
       });
@@ -1384,7 +1409,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
       minDistancePerDay: state.minDistancePerDay,
       maxDistancePerDay: state.maxDistancePerDay,
       maxAltitudePerDay: state.maxAltitudePerDay,
-      excludedHuts: state.excludedHuts,
+        includedHuts: state.includedHuts,
     });
 
     // Limit to first 10 and update
