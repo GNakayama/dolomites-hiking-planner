@@ -15,6 +15,7 @@
 import { ALTA_VIA_STAGES, MIN_DAYS, MAX_DAYS } from './data/alta-via-1.js';
 import { getHutBookingInfo } from './data/hut-booking-links.js';
 import { getHutDetails } from './data/hut-details.js';
+import { getStagePointsOfInterest } from './data/points-of-interest.js';
 import { generateAllCombinations } from './utils/route-generator.js';
 import { applyFilters } from './utils/filters.js';
 import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
@@ -1544,7 +1545,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       { id: "huts", label: "Huts & Booking" },
       { id: "preparation", label: "Preparation" },
       { id: "commuting", label: "Commuting" },
-      { id: "tips", label: "Tips & Points of Interest" },
+      // { id: "tips", label: "Tips & Points of Interest" }, // Disabled for now
     ];
 
     let activeTab = "overview";
@@ -1597,9 +1598,9 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       case "commuting":
         container.appendChild(createCommutingTab());
         break;
-      case "tips":
-        container.appendChild(createTipsTab());
-        break;
+      // case "tips":
+      //   container.appendChild(createTipsTab());
+      //   break;
     }
   }
 
@@ -2204,21 +2205,171 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     heading.className = "plan-section-heading";
     heading.textContent = "Tips & Points of Interest";
 
-    const placeholder = document.createElement("div");
-    placeholder.className = "plan-placeholder";
-    placeholder.innerHTML = `
-      <p>🚧 Coming soon: Scenic detours and hiking tips</p>
-      <p class="muted-text">This section will include:</p>
-      <ul>
-        <li>Scenic viewpoints and detours</li>
-        <li>Photography tips</li>
-        <li>Historical context</li>
-        <li>Local tips and recommendations</li>
-      </ul>
-    `;
+    const itineraryList = document.createElement("div");
+    itineraryList.className = "plan-itinerary-list";
+
+    state.itinerary.forEach((day) => {
+      const dayCard = document.createElement("div");
+      dayCard.className = "plan-day-card";
+
+      // Day header
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "plan-day-header";
+
+      const dayTitle = document.createElement("div");
+      dayTitle.className = "plan-day-title";
+      dayTitle.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const dayMeta = document.createElement("div");
+      dayMeta.className = "plan-day-meta";
+      dayMeta.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m ascent`;
+
+      dayHeader.appendChild(dayTitle);
+      dayHeader.appendChild(dayMeta);
+
+      dayCard.appendChild(dayHeader);
+
+      // Collect all points of interest for this day's stages
+      const allPOIs = [];
+      if (day.allStages) {
+        day.allStages.forEach((stage) => {
+          const stagePOIs = getStagePointsOfInterest(stage);
+          stagePOIs.forEach((poi) => {
+            // Avoid duplicates
+            if (!allPOIs.find((p) => p.location === poi.location)) {
+              allPOIs.push(poi);
+            }
+          });
+        });
+      } else {
+        const stagePOIs = getStagePointsOfInterest(day.stage);
+        allPOIs.push(...stagePOIs);
+      }
+
+      if (allPOIs.length === 0) {
+        // No points of interest for this day
+        const noPOI = document.createElement("div");
+        noPOI.className = "poi-info-section";
+        noPOI.innerHTML = `
+          <div class="poi-note muted-text">No specific points of interest or tips for this day. Focus on enjoying the trail!</div>
+        `;
+        dayCard.appendChild(noPOI);
+      } else {
+        // Display each point of interest
+        allPOIs.forEach((poi) => {
+          const poiSection = document.createElement("div");
+          poiSection.className = "poi-info-section";
+
+          // POI name and type
+          const poiHeader = document.createElement("div");
+          poiHeader.className = "poi-header";
+
+          const poiName = document.createElement("div");
+          poiName.className = "poi-name";
+          poiName.textContent = poi.name;
+
+          const poiType = document.createElement("div");
+          poiType.className = "poi-type";
+          const typeLabels = {
+            scenic: "🏞️ Scenic",
+            viewpoint: "👁️ Viewpoint",
+            hut: "🏕️ Hut",
+            area: "🌄 Area",
+            finish: "🏁 Finish",
+          };
+          poiType.textContent = typeLabels[poi.type] || poi.type;
+
+          poiHeader.appendChild(poiName);
+          poiHeader.appendChild(poiType);
+          poiSection.appendChild(poiHeader);
+
+          // Description
+          if (poi.description) {
+            const description = document.createElement("div");
+            description.className = "poi-description";
+            description.textContent = poi.description;
+            poiSection.appendChild(description);
+          }
+
+          // Detour information
+          if (poi.detour) {
+            const detourCard = document.createElement("div");
+            detourCard.className = "poi-detour-card";
+
+            const detourHeader = document.createElement("div");
+            detourHeader.className = "poi-detour-header";
+            detourHeader.innerHTML = `
+              <span class="poi-detour-icon">🔄</span>
+              <span class="poi-detour-title">${poi.detour.name}</span>
+            `;
+
+            const detourMeta = document.createElement("div");
+            detourMeta.className = "poi-detour-meta";
+            detourMeta.innerHTML = `
+              <span class="poi-detour-time">${poi.detour.time}</span>
+              <span class="poi-detour-difficulty">${poi.detour.difficulty}</span>
+            `;
+
+            const detourDescription = document.createElement("div");
+            detourDescription.className = "poi-detour-description";
+            detourDescription.textContent = poi.detour.description;
+
+            detourCard.appendChild(detourHeader);
+            detourCard.appendChild(detourMeta);
+            detourCard.appendChild(detourDescription);
+            poiSection.appendChild(detourCard);
+          }
+
+          // Best time
+          if (poi.bestTime) {
+            const bestTime = document.createElement("div");
+            bestTime.className = "poi-best-time";
+            bestTime.innerHTML = `<span class="poi-best-time-icon">⏰</span><span>Best time: ${poi.bestTime}</span>`;
+            poiSection.appendChild(bestTime);
+          }
+
+          // Tips
+          if (poi.tips && poi.tips.length > 0) {
+            const tipsSection = document.createElement("div");
+            tipsSection.className = "poi-tips-section";
+
+            const tipsTitle = document.createElement("div");
+            tipsTitle.className = "poi-section-title";
+            tipsTitle.textContent = "💡 Tips";
+
+            const tipsList = document.createElement("ul");
+            tipsList.className = "poi-tips-list";
+            poi.tips.forEach((tip) => {
+              const li = document.createElement("li");
+              li.textContent = tip;
+              tipsList.appendChild(li);
+            });
+
+            tipsSection.appendChild(tipsTitle);
+            tipsSection.appendChild(tipsList);
+            poiSection.appendChild(tipsSection);
+          }
+
+          // Historical context
+          if (poi.historical) {
+            const historical = document.createElement("div");
+            historical.className = "poi-historical";
+            historical.innerHTML = `
+              <span class="poi-historical-icon">📜</span>
+              <span class="poi-historical-text">${poi.historical}</span>
+            `;
+            poiSection.appendChild(historical);
+          }
+
+          dayCard.appendChild(poiSection);
+        });
+      }
+
+      itineraryList.appendChild(dayCard);
+    });
 
     content.appendChild(heading);
-    content.appendChild(placeholder);
+    content.appendChild(itineraryList);
 
     return content;
   }

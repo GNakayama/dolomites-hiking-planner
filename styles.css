@@ -1486,6 +1486,167 @@ body {
   font-weight: 600;
 }
 
+/* Points of Interest Styles */
+.poi-info-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.poi-info-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.poi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.poi-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.poi-type {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.5rem;
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+
+.poi-description {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.poi-detour-card {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.poi-detour-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.poi-detour-icon {
+  font-size: 1.1rem;
+}
+
+.poi-detour-title {
+  font-weight: 600;
+  color: var(--accent-strong);
+  font-size: 0.95rem;
+}
+
+.poi-detour-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.poi-detour-time {
+  color: var(--text-soft);
+}
+
+.poi-detour-difficulty {
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+
+.poi-detour-description {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.poi-best-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin: 0.75rem 0;
+}
+
+.poi-best-time-icon {
+  font-size: 1rem;
+}
+
+.poi-tips-section {
+  margin: 0.75rem 0;
+}
+
+.poi-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.poi-tips-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.poi-tips-list li {
+  margin: 0.4rem 0;
+}
+
+.poi-historical {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.poi-historical-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.poi-note {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-style: italic;
+  text-align: center;
+  padding: 1rem;
+}
+
 @media (max-width: 600px) {
   .plan-summary-stats {
     gap: 1.5rem;
@@ -1514,5 +1675,11 @@ body {
 
   .commuting-sections {
     gap: 1.5rem;
+  }
+
+  .poi-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
