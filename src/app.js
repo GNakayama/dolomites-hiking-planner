@@ -14,6 +14,7 @@
 
 import { ALTA_VIA_STAGES, MIN_DAYS, MAX_DAYS } from './data/alta-via-1.js';
 import { getHutBookingInfo } from './data/hut-booking-links.js';
+import { getHutDetails } from './data/hut-details.js';
 import { generateAllCombinations } from './utils/route-generator.js';
 import { applyFilters } from './utils/filters.js';
 import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
@@ -1546,22 +1547,283 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     heading.className = "plan-section-heading";
     heading.textContent = "Huts & Booking Information";
 
-    const placeholder = document.createElement("div");
-    placeholder.className = "plan-placeholder";
-    placeholder.innerHTML = `
-      <p>🚧 Coming soon: Detailed hut information and booking links</p>
-      <p class="muted-text">This section will include:</p>
-      <ul>
-        <li>Hut facilities and services</li>
-        <li>Meal information</li>
-        <li>Booking links</li>
-        <li>Contact information</li>
-        <li>Arrival time recommendations</li>
-      </ul>
-    `;
+    const itineraryList = document.createElement("div");
+    itineraryList.className = "plan-itinerary-list";
+
+    state.itinerary.forEach((day) => {
+      const dayCard = document.createElement("div");
+      dayCard.className = "plan-day-card";
+
+      // Day header
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "plan-day-header";
+
+      const dayTitle = document.createElement("div");
+      dayTitle.className = "plan-day-title";
+      dayTitle.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const dayMeta = document.createElement("div");
+      dayMeta.className = "plan-day-meta";
+      dayMeta.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m ascent`;
+
+      dayHeader.appendChild(dayTitle);
+      dayHeader.appendChild(dayMeta);
+
+      // Hut information
+      if (day.stage.hut === "End in valley") {
+        const finishNote = document.createElement("div");
+        finishNote.className = "hut-info-section";
+        finishNote.innerHTML = `
+          <div class="hut-name">Finish in the valley</div>
+          <div class="hut-note">No hut booking needed for this day.</div>
+        `;
+        dayCard.appendChild(dayHeader);
+        dayCard.appendChild(finishNote);
+      } else {
+        const hutDetails = getHutDetails(day.stage.hut);
+        
+        // Hut name and basic info
+        const hutNameSection = document.createElement("div");
+        hutNameSection.className = "hut-info-section";
+        
+        const hutName = document.createElement("div");
+        hutName.className = "hut-name";
+        hutName.textContent = day.stage.hut;
+        
+        hutNameSection.appendChild(hutName);
+        
+        // Elevation and capacity (if available)
+        if (hutDetails) {
+          const hutBasicInfo = document.createElement("div");
+          hutBasicInfo.className = "hut-basic-info";
+          
+          if (hutDetails.elevation) {
+            const elevation = document.createElement("span");
+            elevation.className = "hut-info-badge";
+            elevation.textContent = `📍 ${hutDetails.elevation} m`;
+            hutBasicInfo.appendChild(elevation);
+          }
+          
+          if (hutDetails.capacity) {
+            const capacity = document.createElement("span");
+            capacity.className = "hut-info-badge";
+            capacity.textContent = `👥 ${hutDetails.capacity} beds`;
+            hutBasicInfo.appendChild(capacity);
+          }
+          
+          if (hutBasicInfo.children.length > 0) {
+            hutNameSection.appendChild(hutBasicInfo);
+          }
+        }
+        
+        dayCard.appendChild(dayHeader);
+        dayCard.appendChild(hutNameSection);
+
+        if (hutDetails) {
+          // Check-in/Check-out times
+          if (hutDetails.checkIn || hutDetails.checkOut) {
+            const timesSection = document.createElement("div");
+            timesSection.className = "hut-info-section";
+            
+            const timesTitle = document.createElement("div");
+            timesTitle.className = "hut-section-title";
+            timesTitle.textContent = "Arrival & Departure";
+            
+            const timesContent = document.createElement("div");
+            timesContent.className = "hut-section-content";
+            
+            if (hutDetails.checkIn) {
+              const checkIn = document.createElement("div");
+              checkIn.className = "hut-time-item";
+              checkIn.innerHTML = `<span class="hut-time-label">Check-in:</span> <span class="hut-time-value">${hutDetails.checkIn}</span>`;
+              timesContent.appendChild(checkIn);
+            }
+            
+            if (hutDetails.checkOut) {
+              const checkOut = document.createElement("div");
+              checkOut.className = "hut-time-item";
+              checkOut.innerHTML = `<span class="hut-time-label">Check-out:</span> <span class="hut-time-value">${hutDetails.checkOut}</span>`;
+              timesContent.appendChild(checkOut);
+            }
+            
+            timesSection.appendChild(timesTitle);
+            timesSection.appendChild(timesContent);
+            dayCard.appendChild(timesSection);
+          }
+
+          // Facilities
+          if (hutDetails.facilities) {
+            const facilitiesSection = document.createElement("div");
+            facilitiesSection.className = "hut-info-section";
+            
+            const facilitiesTitle = document.createElement("div");
+            facilitiesTitle.className = "hut-section-title";
+            facilitiesTitle.textContent = "Facilities";
+            
+            const facilitiesGrid = document.createElement("div");
+            facilitiesGrid.className = "hut-facilities-grid";
+            
+            const facilityLabels = {
+              showers: "🚿 Showers",
+              wifi: "📶 WiFi",
+              electricity: "⚡ Electricity",
+              blankets: "🛏️ Blankets",
+              towels: "🧺 Towels",
+              restaurant: "🍽️ Restaurant",
+              bar: "🍺 Bar",
+            };
+            
+            Object.entries(facilityLabels).forEach(([key, label]) => {
+              const hasFacility = hutDetails.facilities[key];
+              const facilityItem = document.createElement("div");
+              facilityItem.className = `hut-facility-item ${hasFacility ? "available" : "unavailable"}`;
+              facilityItem.innerHTML = `
+                <span class="hut-facility-icon">${hasFacility ? "✓" : "✗"}</span>
+                <span class="hut-facility-label">${label}</span>
+              `;
+              facilitiesGrid.appendChild(facilityItem);
+            });
+            
+            facilitiesSection.appendChild(facilitiesTitle);
+            facilitiesSection.appendChild(facilitiesGrid);
+            dayCard.appendChild(facilitiesSection);
+          }
+
+          // Meals
+          if (hutDetails.meals) {
+            const mealsSection = document.createElement("div");
+            mealsSection.className = "hut-info-section";
+            
+            const mealsTitle = document.createElement("div");
+            mealsTitle.className = "hut-section-title";
+            mealsTitle.textContent = "Meals Available";
+            
+            const mealsList = document.createElement("div");
+            mealsList.className = "hut-meals-list";
+            
+            const mealLabels = {
+              breakfast: "☕ Breakfast",
+              lunch: "🍽️ Lunch",
+              dinner: "🍲 Dinner",
+              packedLunch: "🥪 Packed Lunch",
+            };
+            
+            Object.entries(mealLabels).forEach(([key, label]) => {
+              if (hutDetails.meals[key]) {
+                const mealItem = document.createElement("div");
+                mealItem.className = "hut-meal-item";
+                mealItem.textContent = label;
+                mealsList.appendChild(mealItem);
+              }
+            });
+            
+            if (mealsList.children.length > 0) {
+              mealsSection.appendChild(mealsTitle);
+              mealsSection.appendChild(mealsList);
+              dayCard.appendChild(mealsSection);
+            }
+          }
+
+          // Contact information
+          if (hutDetails.contact) {
+            const contactSection = document.createElement("div");
+            contactSection.className = "hut-info-section";
+            
+            const contactTitle = document.createElement("div");
+            contactTitle.className = "hut-section-title";
+            contactTitle.textContent = "Contact";
+            
+            const contactList = document.createElement("div");
+            contactList.className = "hut-contact-list";
+            
+            if (hutDetails.contact.phone) {
+              const phone = document.createElement("a");
+              phone.className = "hut-contact-link";
+              phone.href = `tel:${hutDetails.contact.phone}`;
+              phone.textContent = `📞 ${hutDetails.contact.phone}`;
+              contactList.appendChild(phone);
+            }
+            
+            if (hutDetails.contact.email) {
+              const email = document.createElement("a");
+              email.className = "hut-contact-link";
+              email.href = `mailto:${hutDetails.contact.email}`;
+              email.textContent = `✉️ ${hutDetails.contact.email}`;
+              contactList.appendChild(email);
+            }
+            
+            if (hutDetails.contact.website) {
+              const website = document.createElement("a");
+              website.className = "hut-contact-link";
+              website.href = hutDetails.contact.website;
+              website.target = "_blank";
+              website.rel = "noopener noreferrer";
+              website.textContent = `🌐 Website`;
+              contactList.appendChild(website);
+            }
+            
+            if (contactList.children.length > 0) {
+              contactSection.appendChild(contactTitle);
+              contactSection.appendChild(contactList);
+              dayCard.appendChild(contactSection);
+            }
+          }
+
+          // Booking button
+          if (hutDetails.bookingUrl) {
+            const bookingSection = document.createElement("div");
+            bookingSection.className = "hut-info-section";
+            
+            const bookingButton = document.createElement("a");
+            bookingButton.className = "hut-booking-button";
+            bookingButton.href = hutDetails.bookingUrl;
+            bookingButton.target = "_blank";
+            bookingButton.rel = "noopener noreferrer";
+            bookingButton.innerHTML = '<span>🔗</span><span>Book Now</span>';
+            
+            bookingSection.appendChild(bookingButton);
+            dayCard.appendChild(bookingSection);
+          } else {
+            // Show message if no online booking
+            const bookingSection = document.createElement("div");
+            bookingSection.className = "hut-info-section";
+            
+            const bookingNote = document.createElement("div");
+            bookingNote.className = "hut-booking-note";
+            bookingNote.textContent = "⚠️ No online booking available. Please contact by phone.";
+            
+            bookingSection.appendChild(bookingNote);
+            dayCard.appendChild(bookingSection);
+          }
+
+          // Notes
+          if (hutDetails.notes) {
+            const notesSection = document.createElement("div");
+            notesSection.className = "hut-info-section";
+            
+            const notes = document.createElement("div");
+            notes.className = "hut-notes";
+            notes.innerHTML = `<span class="hut-notes-icon">💡</span><span>${hutDetails.notes}</span>`;
+            
+            notesSection.appendChild(notes);
+            dayCard.appendChild(notesSection);
+          }
+        } else {
+          // No details available
+          const noDetails = document.createElement("div");
+          noDetails.className = "hut-info-section";
+          noDetails.innerHTML = `
+            <div class="hut-note muted-text">Detailed information not available for this hut.</div>
+          `;
+          dayCard.appendChild(noDetails);
+        }
+      }
+
+      itineraryList.appendChild(dayCard);
+    });
 
     content.appendChild(heading);
-    content.appendChild(placeholder);
+    content.appendChild(itineraryList);
 
     return content;
   }
