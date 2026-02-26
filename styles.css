@@ -922,6 +922,234 @@ body {
   padding-left: 1.5rem;
 }
 
+/* Hut Availability Styles */
+.hut-availability-section {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hut-availability-label {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.hut-availability-calendar-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+}
+
+.hut-availability-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.hut-availability-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.hut-availability-modal-content {
+  position: relative;
+  z-index: 1001;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.hut-availability-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hut-availability-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hut-availability-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.hut-availability-modal-close:hover {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text);
+}
+
+.hut-availability-calendar {
+  margin-top: 0;
+}
+
+.hut-availability-dates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  min-height: 1.5rem;
+}
+
+.hut-availability-date-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--accent-strong);
+}
+
+.hut-availability-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-strong);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.hut-availability-remove-btn:hover {
+  background: rgba(34, 197, 94, 0.2);
+  transform: scale(1.1);
+}
+
+.hut-availability-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.hut-availability-calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  padding: 0.4rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hut-availability-calendar-cell {
+  aspect-ratio: 1;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.hut-availability-calendar-cell:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.4);
+  transform: scale(1.05);
+}
+
+.hut-availability-calendar-cell-selected {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.hut-availability-calendar-cell-selected:hover {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.hut-availability-calendar-cell-empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.hut-availability-summary {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  text-align: center;
+  padding: 0.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 0.4rem;
+}
+
+.hut-availability-summary-empty {
+  font-style: italic;
+}
+
+.hut-availability-no-dates {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  font-style: italic;
+  text-align: center;
+  padding: 0.75rem;
+}
+
 @media (max-width: 600px) {
   .hut-exclusion-card {
     padding: 0.6rem;
@@ -2009,5 +2237,29 @@ body {
 
   .time-estimate-value {
     font-size: 1.25rem;
+  }
+
+  .hut-availability-calendar-cell {
+    min-width: 2rem;
+    min-height: 2rem;
+    font-size: 0.75rem;
+  }
+
+  .hut-availability-calendar-weekday {
+    font-size: 0.65rem;
+    padding: 0.3rem 0;
+  }
+
+  .hut-availability-modal {
+    padding: 0.5rem;
+  }
+
+  .hut-availability-modal-content {
+    padding: 1rem;
+    max-height: 95vh;
+  }
+
+  .hut-availability-modal-header h3 {
+    font-size: 1rem;
   }
 }

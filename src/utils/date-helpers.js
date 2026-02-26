@@ -17,11 +17,22 @@ export function formatShortDate(value) {
  */
 export function buildItineraryFromCombination(startDate, combination) {
   const itinerary = [];
-  const base = startDate ? new Date(startDate) : new Date();
+  
+  // Parse start date manually to avoid timezone issues
+  let base;
+  if (startDate) {
+    const [year, month, day] = startDate.split('-').map(Number);
+    base = new Date(Date.UTC(year, month - 1, day));
+  } else {
+    base = new Date();
+  }
 
   combination.forEach((day, index) => {
-    const date = new Date(base);
-    date.setDate(base.getDate() + index);
+    // Use UTC to avoid timezone shifts when adding days
+    const [year, month, dayNum] = startDate 
+      ? startDate.split('-').map(Number)
+      : [base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate()];
+    const date = new Date(Date.UTC(year, month - 1, dayNum + index));
 
     // For display, we'll use the first stage as the representative
     // but show the combined distance and ascent

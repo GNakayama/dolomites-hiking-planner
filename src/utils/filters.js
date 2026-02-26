@@ -43,6 +43,53 @@ export function filterByExcludedHuts(combinations, excludedHuts) {
 }
 
 /**
+ * Filters combinations by hut availability dates
+ * @param {Array} combinations - Array of route combinations
+ * @param {Object} hutAvailability - Object mapping hut names to arrays of available dates (YYYY-MM-DD)
+ * @param {string} startDate - Start date of the trip (YYYY-MM-DD)
+ * @returns {Array} Filtered combinations
+ */
+export function filterByHutAvailability(combinations, hutAvailability, startDate) {
+  if (!hutAvailability || Object.keys(hutAvailability).length === 0) {
+    return combinations; // No availability constraints
+  }
+  
+  if (!startDate) {
+    return combinations; // Can't check availability without start date
+  }
+
+  // Parse start date manually to avoid timezone issues
+  // startDate is in YYYY-MM-DD format
+  const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+  const start = new Date(Date.UTC(startYear, startMonth - 1, startDay));
+  
+  return combinations.filter((combo) => {
+    // Check each day in the combination
+    return combo.every((day, dayIndex) => {
+      const hut = day.hut;
+      
+      // Skip if hut is "End in valley" (no booking needed)
+      if (hut === "End in valley") {
+        return true;
+      }
+      
+      // If no availability set for this hut, assume always available
+      if (!hutAvailability[hut] || hutAvailability[hut].length === 0) {
+        return true;
+      }
+      
+      // Calculate which date this day falls on
+      // Use UTC to avoid timezone shifts
+      const dayDate = new Date(Date.UTC(startYear, startMonth - 1, startDay + dayIndex));
+      const dateString = dayDate.toISOString().slice(0, 10); // YYYY-MM-DD
+      
+      // Check if this date is in the availability list
+      return hutAvailability[hut].includes(dateString);
+    });
+  });
+}
+
+/**
  * Applies all filters to combinations
  */
 export function applyFilters(combinations, filters) {
@@ -71,6 +118,11 @@ export function applyFilters(combinations, filters) {
   
   if (filters.excludedHuts && filters.excludedHuts.length > 0) {
     filtered = filterByExcludedHuts(filtered, filters.excludedHuts);
+  }
+  
+  // Filter by hut availability (requires startDate)
+  if (filters.hutAvailability && filters.startDate) {
+    filtered = filterByHutAvailability(filtered, filters.hutAvailability, filters.startDate);
   }
   
   return filtered;

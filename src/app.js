@@ -70,6 +70,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
         maxDistancePerDay: state.maxDistancePerDay,
         maxAltitudePerDay: state.maxAltitudePerDay,
         excludedHuts: state.excludedHuts,
+        hutAvailability: state.hutAvailability,
         selectedCombinationIndex: state.selectedCombinationIndex,
         carouselIndex: state.carouselIndex,
       };
@@ -137,6 +138,7 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     maxDistancePerDay: "", // Max km per day
     maxAltitudePerDay: "", // Max ascent meters per day
     excludedHuts: [], // Array of hut names to exclude
+    hutAvailability: {}, // Object: { "Rifugio X": ["2024-07-01", "2024-07-02", ...] }
     errors: {
       startDate: "",
       numDays: "",
@@ -191,6 +193,15 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
   function renderAppShell() {
     const root = document.getElementById("app-root");
     if (!root) return;
+
+    // Clean up any existing modals before re-rendering
+    const existingModals = document.querySelectorAll('.hut-availability-modal');
+    existingModals.forEach(modal => {
+      if (modal._cleanup) {
+        modal._cleanup();
+      }
+      modal.remove();
+    });
 
     root.innerHTML = "";
 
@@ -936,8 +947,13 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     const helper = document.createElement("div");
     helper.className = "field-helper";
     helper.innerHTML = `
-      <p style="margin: 0 0 0.5rem 0;">Click "Check Availability" for each hut to verify bookings, then exclude any that are fully booked.</p>
-      <p style="margin: 0; font-size: 0.85rem;" class="muted-text">💡 Tip: Open booking links in new tabs, check availability, then return here to exclude booked huts.</p>
+      <p style="margin: 0 0 0.5rem 0;">Click "Check Availability" for each hut to verify bookings. You can:</p>
+      <ul style="margin: 0.5rem 0; padding-left: 1.5rem; font-size: 0.85rem;">
+        <li>Exclude huts that are fully booked</li>
+        <li>Set specific available dates for each hut (routes will only use huts on their available dates)</li>
+        <li>Leave dates empty to assume the hut is always available</li>
+      </ul>
+      <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;" class="muted-text">💡 Tip: Open booking links in new tabs, check availability, then return here to set dates or exclude huts.</p>
     `;
 
     root.appendChild(label);
@@ -1027,6 +1043,265 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
       // Add booking button below the title
       hutCard.appendChild(bookingButton);
 
+      // Availability dates section
+      const availabilitySection = document.createElement("div");
+      availabilitySection.className = "hut-availability-section";
+
+      const availabilityLabel = document.createElement("div");
+      availabilityLabel.className = "hut-availability-label";
+      availabilityLabel.textContent = "Set available dates (leave empty if always available):";
+
+      // Button to open calendar modal
+      const calendarButton = document.createElement("button");
+      calendarButton.type = "button";
+      calendarButton.className = "btn hut-availability-calendar-btn";
+      
+      const currentDates = state.hutAvailability[hut] || [];
+      if (currentDates.length > 0) {
+        calendarButton.innerHTML = `<span>📅</span><span>${currentDates.length} date${currentDates.length === 1 ? '' : 's'} selected</span>`;
+      } else {
+        calendarButton.innerHTML = '<span>📅</span><span>Select dates</span>';
+      }
+
+      // Create modal for calendar
+      const modal = document.createElement("div");
+      modal.className = "hut-availability-modal";
+      modal.style.display = "none";
+
+      const modalOverlay = document.createElement("div");
+      modalOverlay.className = "hut-availability-modal-overlay";
+      modalOverlay.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      const modalContent = document.createElement("div");
+      modalContent.className = "hut-availability-modal-content";
+      modalContent.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent closing when clicking inside modal
+      });
+
+      // Modal header
+      const modalHeader = document.createElement("div");
+      modalHeader.className = "hut-availability-modal-header";
+      const modalTitle = document.createElement("h3");
+      modalTitle.textContent = `Set availability: ${hut}`;
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "hut-availability-modal-close";
+      closeButton.innerHTML = "×";
+      closeButton.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+      modalHeader.appendChild(modalTitle);
+      modalHeader.appendChild(closeButton);
+
+      // Calendar grid
+      const calendarContainer = document.createElement("div");
+      calendarContainer.className = "hut-availability-calendar";
+
+      // Function to update button text
+      const updateButton = () => {
+        const dates = state.hutAvailability[hut] || [];
+        if (dates.length > 0) {
+          calendarButton.innerHTML = `<span>📅</span><span>${dates.length} date${dates.length === 1 ? '' : 's'} selected</span>`;
+        } else {
+          calendarButton.innerHTML = '<span>📅</span><span>Select dates</span>';
+        }
+      };
+
+      // Function to update calendar display (will be defined inside if block)
+      let updateCalendar = () => {};
+
+      if (state.startDate && state.numDays) {
+        // Generate all dates in the trip range
+        const [startYear, startMonth, startDay] = state.startDate.split('-').map(Number);
+        const numDays = parseInt(state.numDays, 10);
+
+        // Create calendar grid
+        const calendarGrid = document.createElement("div");
+        calendarGrid.className = "hut-availability-calendar-grid";
+
+        // Add weekday headers
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        weekdays.forEach(day => {
+          const header = document.createElement("div");
+          header.className = "hut-availability-calendar-weekday";
+          header.textContent = day;
+          calendarGrid.appendChild(header);
+        });
+
+        // Calculate first day of week for the start date
+        const startDateObj = new Date(Date.UTC(startYear, startMonth - 1, startDay));
+        const firstDayOfWeek = startDateObj.getUTCDay();
+
+        // Add empty cells before start date to align with weekday headers
+        for (let i = 0; i < firstDayOfWeek; i++) {
+          const emptyCell = document.createElement("div");
+          emptyCell.className = "hut-availability-calendar-cell hut-availability-calendar-cell-empty";
+          calendarGrid.appendChild(emptyCell);
+        }
+
+        // Show summary of selected dates
+        const summary = document.createElement("div");
+        summary.className = "hut-availability-summary";
+
+        // Function to update calendar display
+        updateCalendar = () => {
+          const dates = state.hutAvailability[hut] || [];
+          // Update all cells
+          calendarGrid.querySelectorAll('.hut-availability-calendar-cell:not(.hut-availability-calendar-cell-empty)').forEach(cell => {
+            const dateString = cell.getAttribute("data-date");
+            if (dates.includes(dateString)) {
+              cell.classList.add('hut-availability-calendar-cell-selected');
+            } else {
+              cell.classList.remove('hut-availability-calendar-cell-selected');
+            }
+          });
+          // Update summary
+          if (dates.length > 0) {
+            summary.textContent = `${dates.length} date${dates.length === 1 ? '' : 's'} selected`;
+            summary.className = "hut-availability-summary";
+          } else {
+            summary.textContent = "No dates selected (assumed always available)";
+            summary.className = "hut-availability-summary hut-availability-summary-empty";
+          }
+          // Update button
+          updateButton();
+        };
+
+        // Add date cells
+        for (let i = 0; i < numDays; i++) {
+          const dateObj = new Date(Date.UTC(startYear, startMonth - 1, startDay + i));
+          const dateString = dateObj.toISOString().slice(0, 10);
+          const dayOfMonth = dateObj.getUTCDate();
+          const isSelected = currentDates.includes(dateString);
+
+          const dateCell = document.createElement("button");
+          dateCell.type = "button";
+          dateCell.className = `hut-availability-calendar-cell ${isSelected ? 'hut-availability-calendar-cell-selected' : ''}`;
+          dateCell.textContent = dayOfMonth;
+          dateCell.setAttribute("data-date", dateString);
+          dateCell.setAttribute("title", formatShortDate(dateString));
+
+          dateCell.addEventListener("click", () => {
+            // Initialize array if it doesn't exist
+            if (!state.hutAvailability[hut]) {
+              state.hutAvailability[hut] = [];
+            }
+
+            // Toggle date
+            if (isSelected) {
+              state.hutAvailability[hut] = state.hutAvailability[hut].filter(d => d !== dateString);
+              if (state.hutAvailability[hut].length === 0) {
+                delete state.hutAvailability[hut];
+              }
+            } else {
+              if (!state.hutAvailability[hut].includes(dateString)) {
+                state.hutAvailability[hut].push(dateString);
+                state.hutAvailability[hut].sort(); // Keep sorted
+              }
+            }
+            saveStateToStorage();
+            updateCalendar();
+          });
+
+          calendarGrid.appendChild(dateCell);
+        }
+
+        calendarContainer.appendChild(calendarGrid);
+        calendarContainer.appendChild(summary);
+        
+        // Initialize summary
+        updateCalendar();
+      } else {
+        const noDatesMsg = document.createElement("div");
+        noDatesMsg.className = "hut-availability-no-dates";
+        noDatesMsg.textContent = "Select dates in Step 1 to set availability";
+        calendarContainer.appendChild(noDatesMsg);
+      }
+
+      // Open modal on button click
+      calendarButton.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+
+      // Display selected dates as pills
+      const datesList = document.createElement("div");
+      datesList.className = "hut-availability-dates-list";
+
+      const updateDatesList = () => {
+        datesList.innerHTML = ""; // Clear existing
+        const dates = state.hutAvailability[hut] || [];
+        
+        if (dates.length > 0) {
+          dates.forEach((date) => {
+            const dateTag = document.createElement("div");
+            dateTag.className = "hut-availability-date-tag";
+            dateTag.innerHTML = `
+              <span>${formatShortDate(date)}</span>
+              <button type="button" class="hut-availability-remove-btn" data-date="${date}">×</button>
+            `;
+            
+            const removeBtn = dateTag.querySelector(".hut-availability-remove-btn");
+            removeBtn.addEventListener("click", (e) => {
+              e.stopPropagation(); // Prevent any bubbling
+              // Remove date
+              state.hutAvailability[hut] = state.hutAvailability[hut].filter(d => d !== date);
+              if (state.hutAvailability[hut].length === 0) {
+                delete state.hutAvailability[hut];
+              }
+              saveStateToStorage();
+              // Update calendar in modal (if it exists)
+              updateCalendar();
+              // Update dates list
+              updateDatesList();
+              // Update button
+              updateButton();
+            });
+            
+            datesList.appendChild(dateTag);
+          });
+        }
+      };
+
+      // Initial render of dates list
+      updateDatesList();
+
+      // Wrap updateCalendar to also update dates list
+      const originalUpdateCalendar = updateCalendar;
+      updateCalendar = () => {
+        originalUpdateCalendar();
+        updateDatesList();
+        updateButton();
+      };
+
+      // Assemble modal
+      modalContent.appendChild(modalHeader);
+      modalContent.appendChild(calendarContainer);
+      modal.appendChild(modalOverlay);
+      modal.appendChild(modalContent);
+
+      // Close on Escape key
+      const handleEscape = (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+          modal.style.display = 'none';
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+
+      // Store cleanup function on modal
+      modal._cleanup = () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+
+      // Add to document body
+      document.body.appendChild(modal);
+
+      availabilitySection.appendChild(availabilityLabel);
+      availabilitySection.appendChild(calendarButton);
+      availabilitySection.appendChild(datesList);
+      hutCard.appendChild(availabilitySection);
+
       // Add note if available
       if (bookingInfo?.note) {
         const note = document.createElement("div");
@@ -1074,6 +1349,8 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
         maxDistancePerDay: state.maxDistancePerDay,
         maxAltitudePerDay: state.maxAltitudePerDay,
         excludedHuts: state.excludedHuts,
+        hutAvailability: state.hutAvailability,
+        startDate: state.startDate,
       });
 
       state.allCombinations = filtered.slice(0, 10);
