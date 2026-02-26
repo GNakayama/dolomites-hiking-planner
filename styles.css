@@ -211,3 +211,155 @@ body {
   color: var(--text-soft);
 }
 
+/* Inputs & buttons for the wizard */
+.input,
+.select {
+  appearance: none;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+  outline: none;
+  min-width: 0;
+}
+
+.input:focus,
+.select:focus {
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(34, 197, 94, 0.55),
+    0 0 0 6px rgba(34, 197, 94, 0.1);
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.btn {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-primary {
+  border-color: rgba(34, 197, 94, 0.7);
+  background: linear-gradient(to right, #16a34a, #22c55e);
+  color: #ecfdf5;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.wizard-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.wizard-step-badge {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+}
+
+.wizard-step-active {
+  border-color: rgba(34, 197, 94, 0.75);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.wizard-step-active .wizard-step-badge {
+  border-color: rgba(34, 197, 94, 0.75);
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.wizard-step-done {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.error-text {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--danger);
+}
+
+.itinerary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.itinerary-day {
+  border-radius: 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 0.5rem 0.65rem;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.itinerary-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+
+.itinerary-day-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.itinerary-day-meta {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.summary-chip {
+  font-size: 0.74rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.85);
+}
+
