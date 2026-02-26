@@ -19,6 +19,7 @@ import { getStagePointsOfInterest } from './data/points-of-interest.js';
 import { generateAllCombinations } from './utils/route-generator.js';
 import { applyFilters } from './utils/filters.js';
 import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
+import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
 
 (() => {
   // ---------------------------------------------------------------------------
@@ -1673,21 +1674,159 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     heading.className = "plan-section-heading";
     heading.textContent = "Navigation & Maps";
 
-    const placeholder = document.createElement("div");
-    placeholder.className = "plan-placeholder";
-    placeholder.innerHTML = `
-      <p>🚧 Coming soon: Interactive map, GPX download, and elevation profiles</p>
-      <p class="muted-text">This section will include:</p>
-      <ul>
-        <li>Interactive route map</li>
-        <li>GPX file download</li>
-        <li>Elevation profile charts</li>
-        <li>Time estimates</li>
-      </ul>
+    // Action buttons
+    const actionsSection = document.createElement("div");
+    actionsSection.className = "navigation-actions";
+
+    const downloadGPXButton = document.createElement("button");
+    downloadGPXButton.className = "btn btn-primary navigation-action-btn";
+    downloadGPXButton.innerHTML = '<span>📥</span><span>Download GPX File</span>';
+    downloadGPXButton.addEventListener("click", () => {
+      const gpxContent = generateGPX(state.itinerary, state.startDate);
+      const filename = `alta-via-1-${state.startDate.replace(/-/g, '')}.gpx`;
+      downloadGPX(gpxContent, filename);
+    });
+
+    actionsSection.appendChild(downloadGPXButton);
+    content.appendChild(heading);
+    content.appendChild(actionsSection);
+
+    // Time estimates section
+    const timeSection = document.createElement("div");
+    timeSection.className = "navigation-section";
+
+    const timeTitle = document.createElement("h3");
+    timeTitle.className = "navigation-section-title";
+    timeTitle.textContent = "⏱️ Estimated Hiking Times";
+
+    const timeList = document.createElement("div");
+    timeList.className = "time-estimates-list";
+
+    state.itinerary.forEach((day) => {
+      const timeCard = document.createElement("div");
+      timeCard.className = "time-estimate-card";
+
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "time-estimate-header";
+      dayHeader.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const timeInfo = document.createElement("div");
+      timeInfo.className = "time-estimate-info";
+
+      // Calculate estimated time based on distance and elevation
+      // Rough estimate: 4 km/h on flat, slower with elevation
+      const baseSpeed = 4; // km/h
+      const elevationFactor = day.stage.ascentM / 1000; // Add time for elevation
+      const estimatedHours = (day.stage.distanceKm / baseSpeed) + (elevationFactor * 0.5);
+      const hours = Math.floor(estimatedHours);
+      const minutes = Math.round((estimatedHours - hours) * 60);
+
+      const timeDisplay = document.createElement("div");
+      timeDisplay.className = "time-estimate-value";
+      if (hours > 0) {
+        timeDisplay.textContent = `${hours}h ${minutes}m`;
+      } else {
+        timeDisplay.textContent = `${minutes}m`;
+      }
+
+      const distanceInfo = document.createElement("div");
+      distanceInfo.className = "time-estimate-meta";
+      distanceInfo.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m ascent`;
+
+      timeInfo.appendChild(timeDisplay);
+      timeInfo.appendChild(distanceInfo);
+
+      timeCard.appendChild(dayHeader);
+      timeCard.appendChild(timeInfo);
+      timeList.appendChild(timeCard);
+    });
+
+    timeSection.appendChild(timeTitle);
+    timeSection.appendChild(timeList);
+    content.appendChild(timeSection);
+
+    // Elevation profile section
+    const elevationSection = document.createElement("div");
+    elevationSection.className = "navigation-section";
+
+    const elevationTitle = document.createElement("h3");
+    elevationTitle.className = "navigation-section-title";
+    elevationTitle.textContent = "📈 Elevation Profile";
+
+    const elevationChart = document.createElement("div");
+    elevationChart.className = "elevation-chart-container";
+
+    // Create simple bar chart visualization
+    const chartBars = document.createElement("div");
+    chartBars.className = "elevation-chart-bars";
+
+    const maxAscent = Math.max(...state.itinerary.map((d) => d.stage.ascentM));
+    const maxDistance = Math.max(...state.itinerary.map((d) => d.stage.distanceKm));
+
+    state.itinerary.forEach((day, index) => {
+      const barContainer = document.createElement("div");
+      barContainer.className = "elevation-chart-day";
+
+      const barLabel = document.createElement("div");
+      barLabel.className = "elevation-chart-label";
+      barLabel.textContent = `Day ${day.dayIndex}`;
+
+      const barWrapper = document.createElement("div");
+      barWrapper.className = "elevation-chart-bar-wrapper";
+
+      // Ascent bar
+      const ascentBar = document.createElement("div");
+      ascentBar.className = "elevation-chart-bar elevation-chart-bar-ascent";
+      const ascentHeight = (day.stage.ascentM / maxAscent) * 100;
+      ascentBar.style.height = `${ascentHeight}%`;
+      ascentBar.title = `${day.stage.ascentM} m ascent`;
+
+      // Distance indicator (width)
+      const distanceBar = document.createElement("div");
+      distanceBar.className = "elevation-chart-bar elevation-chart-bar-distance";
+      const distanceWidth = (day.stage.distanceKm / maxDistance) * 100;
+      distanceBar.style.width = `${distanceWidth}%`;
+      distanceBar.title = `${day.stage.distanceKm} km`;
+
+      const barInfo = document.createElement("div");
+      barInfo.className = "elevation-chart-info";
+      barInfo.innerHTML = `
+        <div class="elevation-chart-info-item">${day.stage.ascentM}m</div>
+        <div class="elevation-chart-info-item">${day.stage.distanceKm}km</div>
+      `;
+
+      barWrapper.appendChild(ascentBar);
+      barWrapper.appendChild(distanceBar);
+      barContainer.appendChild(barLabel);
+      barContainer.appendChild(barWrapper);
+      barContainer.appendChild(barInfo);
+      chartBars.appendChild(barContainer);
+    });
+
+    elevationChart.appendChild(chartBars);
+    elevationSection.appendChild(elevationTitle);
+    elevationSection.appendChild(elevationChart);
+    content.appendChild(elevationSection);
+
+    // Map placeholder
+    const mapSection = document.createElement("div");
+    mapSection.className = "navigation-section";
+
+    const mapTitle = document.createElement("h3");
+    mapTitle.className = "navigation-section-title";
+    mapTitle.textContent = "🗺️ Interactive Map";
+
+    const mapPlaceholder = document.createElement("div");
+    mapPlaceholder.className = "map-placeholder";
+    mapPlaceholder.innerHTML = `
+      <p>🚧 Interactive map coming soon</p>
+      <p class="muted-text">This will show your route on an interactive map with waypoints, elevation, and terrain information.</p>
+      <p class="muted-text" style="margin-top: 0.5rem; font-size: 0.85rem;">For now, use the GPX file above to load the route into your favorite mapping app (AllTrails, Komoot, Gaia GPS, etc.)</p>
     `;
 
-    content.appendChild(heading);
-    content.appendChild(placeholder);
+    mapSection.appendChild(mapTitle);
+    mapSection.appendChild(mapPlaceholder);
+    content.appendChild(mapSection);
 
     return content;
   }
