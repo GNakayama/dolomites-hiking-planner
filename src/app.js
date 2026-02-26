@@ -78,6 +78,17 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     const header = document.createElement("header");
     header.className = "app-header";
 
+    // Warning banner
+    const warningBanner = document.createElement("div");
+    warningBanner.className = "warning-banner";
+    warningBanner.innerHTML = `
+      <span class="warning-icon">⚠️</span>
+      <span class="warning-text">
+        <strong>Prototype Version:</strong> This is an early prototype. Please verify all information independently. 
+        Do not blindly trust the data - distances, hut information, and route details should be cross-checked with official sources.
+      </span>
+    `;
+
     const titleRow = document.createElement("div");
     titleRow.className = "app-header-title";
 
@@ -97,6 +108,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       "Plan a clean, realistic itinerary along the Alta Via 1. " +
       "This first version is static: perfect to iterate on structure, stages, and constraints before wiring in live data.";
 
+    header.appendChild(warningBanner);
     header.appendChild(titleRow);
     header.appendChild(subtitle);
 
