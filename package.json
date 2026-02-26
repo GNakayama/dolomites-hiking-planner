@@ -1,0 +1,17 @@
+{
+  "name": "dolomites-hiking-planner",
+  "version": "1.0.0",
+  "description": "Static hiking planner for the Dolomites Alta Via 1",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  }
+}

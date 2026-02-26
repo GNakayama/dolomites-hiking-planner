@@ -10,139 +10,18 @@
 //   - Left: route overview + wizard controls
 //   - Right: itinerary summary (per day huts + distance)
 //
-// As features grow, we can split this file into small modules inside `src/`
-// (e.g. `state.js`, `components/RouteOverview.js`, `data/alta-via-1.js`, etc.).
+// Refactored to use ES modules for better maintainability and testability.
+
+import { ALTA_VIA_STAGES, MIN_DAYS, MAX_DAYS } from './data/alta-via-1.js';
+import { generateAllCombinations } from './utils/route-generator.js';
+import { applyFilters } from './utils/filters.js';
+import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
 
 (() => {
   // ---------------------------------------------------------------------------
-  // Static Alta Via 1 data - Complete route with all 15 rifugios
-  // Based on: https://www.hikingwithlee.com/alta-via-1-complete-guide/
+  // Data and utilities are now imported from separate modules
+  // See: data/alta-via-1.js, utils/route-generator.js, utils/filters.js, utils/date-helpers.js
   // ---------------------------------------------------------------------------
-  const ALTA_VIA_STAGES = [
-    {
-      id: 1,
-      from: "Lago di Braies",
-      to: "Rifugio Biella",
-      hut: "Rifugio Biella",
-      distanceKm: 9,
-      ascentM: 800,
-    },
-    {
-      id: 2,
-      from: "Rifugio Biella",
-      to: "Rifugio Pederù",
-      hut: "Rifugio Pederù",
-      distanceKm: 12,
-      ascentM: 400,
-    },
-    {
-      id: 3,
-      from: "Rifugio Pederù",
-      to: "Rifugio Fanes",
-      hut: "Rifugio Fanes",
-      distanceKm: 8,
-      ascentM: 450,
-    },
-    {
-      id: 4,
-      from: "Rifugio Fanes",
-      to: "Rifugio Lagazuoi",
-      hut: "Rifugio Lagazuoi",
-      distanceKm: 10,
-      ascentM: 900,
-    },
-    {
-      id: 5,
-      from: "Rifugio Lagazuoi",
-      to: "Rifugio Averau",
-      hut: "Rifugio Averau",
-      distanceKm: 6,
-      ascentM: 300,
-    },
-    {
-      id: 6,
-      from: "Rifugio Averau",
-      to: "Rifugio Nuvolau",
-      hut: "Rifugio Nuvolau",
-      distanceKm: 3,
-      ascentM: 150,
-    },
-    {
-      id: 7,
-      from: "Rifugio Nuvolau",
-      to: "Rifugio Città di Fiume",
-      hut: "Rifugio Città di Fiume",
-      distanceKm: 13,
-      ascentM: 600,
-    },
-    {
-      id: 8,
-      from: "Rifugio Città di Fiume",
-      to: "Rifugio Coldai",
-      hut: "Rifugio Coldai",
-      distanceKm: 11,
-      ascentM: 700,
-    },
-    {
-      id: 9,
-      from: "Rifugio Coldai",
-      to: "Rifugio Tissi",
-      hut: "Rifugio Tissi",
-      distanceKm: 14,
-      ascentM: 800,
-    },
-    {
-      id: 10,
-      from: "Rifugio Tissi",
-      to: "Rifugio Vazzoler",
-      hut: "Rifugio Vazzoler",
-      distanceKm: 10,
-      ascentM: 500,
-    },
-    {
-      id: 11,
-      from: "Rifugio Vazzoler",
-      to: "Rifugio Carestiato",
-      hut: "Rifugio Carestiato",
-      distanceKm: 12,
-      ascentM: 600,
-    },
-    {
-      id: 12,
-      from: "Rifugio Carestiato",
-      to: "Rifugio Palmieri",
-      hut: "Rifugio Palmieri",
-      distanceKm: 8,
-      ascentM: 350,
-    },
-    {
-      id: 13,
-      from: "Rifugio Palmieri",
-      to: "Rifugio Sommariva al Pramperet",
-      hut: "Rifugio Sommariva al Pramperet",
-      distanceKm: 9,
-      ascentM: 400,
-    },
-    {
-      id: 14,
-      from: "Rifugio Sommariva al Pramperet",
-      to: "Rifugio 7 Alpini",
-      hut: "Rifugio 7 Alpini",
-      distanceKm: 7,
-      ascentM: 300,
-    },
-    {
-      id: 15,
-      from: "Rifugio 7 Alpini",
-      to: "La Pissa (Belluno)",
-      hut: "End in valley",
-      distanceKm: 11,
-      ascentM: 200,
-    },
-  ];
-
-  const MIN_DAYS = 5;
-  const MAX_DAYS = 12;
 
   // Simple in-memory state for the wizard.
   const state = {
@@ -929,32 +808,11 @@
       // Generate all possible hut combinations for the selected number of days
       // Apply filters and limit to first 10
       const allCombos = generateAllCombinations(parsed);
-      let filtered = allCombos;
-
-      // Apply filters
-      if (state.maxDistancePerDay) {
-        const maxDist = parseFloat(state.maxDistancePerDay);
-        if (!Number.isNaN(maxDist) && maxDist > 0) {
-          filtered = filtered.filter((combo) =>
-            combo.every((day) => day.totalDistanceKm <= maxDist)
-          );
-        }
-      }
-
-      if (state.maxAltitudePerDay) {
-        const maxAlt = parseFloat(state.maxAltitudePerDay);
-        if (!Number.isNaN(maxAlt) && maxAlt > 0) {
-          filtered = filtered.filter((combo) =>
-            combo.every((day) => day.totalAscentM <= maxAlt)
-          );
-        }
-      }
-
-      if (state.excludedHuts.length > 0) {
-        filtered = filtered.filter((combo) =>
-          combo.every((day) => !state.excludedHuts.includes(day.hut))
-        );
-      }
+      const filtered = applyFilters(allCombos, {
+        maxDistancePerDay: state.maxDistancePerDay,
+        maxAltitudePerDay: state.maxAltitudePerDay,
+        excludedHuts: state.excludedHuts,
+      });
 
       state.allCombinations = filtered.slice(0, 10);
       state.selectedCombinationIndex = null;
@@ -979,43 +837,24 @@
 
   /**
    * Applies filters and regenerates combinations
+   * Uses imported applyFilters utility function
    */
   function applyFiltersAndRegenerate() {
     const numDays = parseInt(state.numDays, 10);
     if (Number.isNaN(numDays)) return;
 
     // Generate all combinations
-    let allCombos = generateAllCombinations(numDays);
+    const allCombos = generateAllCombinations(numDays);
 
-    // Filter by max distance
-    if (state.maxDistancePerDay) {
-      const maxDist = parseFloat(state.maxDistancePerDay);
-      if (!Number.isNaN(maxDist) && maxDist > 0) {
-        allCombos = allCombos.filter((combo) =>
-          combo.every((day) => day.totalDistanceKm <= maxDist)
-        );
-      }
-    }
-
-    // Filter by max altitude/ascent
-    if (state.maxAltitudePerDay) {
-      const maxAlt = parseFloat(state.maxAltitudePerDay);
-      if (!Number.isNaN(maxAlt) && maxAlt > 0) {
-        allCombos = allCombos.filter((combo) =>
-          combo.every((day) => day.totalAscentM <= maxAlt)
-        );
-      }
-    }
-
-    // Filter by excluded huts
-    if (state.excludedHuts.length > 0) {
-      allCombos = allCombos.filter((combo) =>
-        combo.every((day) => !state.excludedHuts.includes(day.hut))
-      );
-    }
+    // Apply filters using imported utility
+    const filtered = applyFilters(allCombos, {
+      maxDistancePerDay: state.maxDistancePerDay,
+      maxAltitudePerDay: state.maxAltitudePerDay,
+      excludedHuts: state.excludedHuts,
+    });
 
     // Limit to first 10 and update
-    state.allCombinations = allCombos.slice(0, 10);
+    state.allCombinations = filtered.slice(0, 10);
     state.carouselIndex = Math.min(
       state.carouselIndex,
       state.allCombinations.length - 1
@@ -1334,124 +1173,13 @@
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /**
-   * Generates all possible ways to complete Alta Via 1 in numDays.
-   * Always goes from start (Lago di Braies) to finish (Belluno).
-   * Returns an array of combinations, where each combination is an array of days.
-   */
-  function generateAllCombinations(numDays) {
-    const totalStages = ALTA_VIA_STAGES.length;
-    const combinations = [];
-
-    // We need to partition totalStages into numDays groups
-    // This is equivalent to finding all ways to place (numDays - 1) breaks
-    // between the stages
-    function findPartitions(stagesLeft, daysLeft, currentPartition) {
-      if (daysLeft === 1) {
-        // Last day: take all remaining stages
-        const dayStages = ALTA_VIA_STAGES.slice(
-          totalStages - stagesLeft,
-          totalStages
-        );
-        const day = createDayFromStages(dayStages);
-        const newPartition = [...currentPartition, day];
-        combinations.push(newPartition);
-        return;
-      }
-
-      // For each possible number of stages for the current day
-      // (at least 1, at most stagesLeft - daysLeft + 1)
-      const minStages = 1;
-      const maxStages = stagesLeft - daysLeft + 1;
-
-      for (let stagesToday = minStages; stagesToday <= maxStages; stagesToday += 1) {
-        const dayStages = ALTA_VIA_STAGES.slice(
-          totalStages - stagesLeft,
-          totalStages - stagesLeft + stagesToday
-        );
-        const day = createDayFromStages(dayStages);
-        findPartitions(
-          stagesLeft - stagesToday,
-          daysLeft - 1,
-          [...currentPartition, day]
-        );
-      }
-    }
-
-    findPartitions(totalStages, numDays, []);
-    return combinations;
-  }
-
-  /**
-   * Creates a day object from an array of consecutive stages.
-   */
-  function createDayFromStages(stages) {
-    if (stages.length === 0) return null;
-
-    const totalDistanceKm = stages.reduce(
-      (sum, stage) => sum + stage.distanceKm,
-      0
-    );
-    const totalAscentM = stages.reduce(
-      (sum, stage) => sum + stage.ascentM,
-      0
-    );
-
-    const firstStage = stages[0];
-    const lastStage = stages[stages.length - 1];
-
-    return {
-      stages: stages,
-      from: firstStage.from,
-      to: lastStage.to,
-      hut: lastStage.hut,
-      totalDistanceKm: totalDistanceKm,
-      totalAscentM: totalAscentM,
-    };
-  }
-
-  /**
-   * Builds an itinerary from a selected combination and start date.
-   */
-  function buildItineraryFromCombination(startDate, combination) {
-    const itinerary = [];
-    const base = startDate ? new Date(startDate) : new Date();
-
-    combination.forEach((day, index) => {
-      const date = new Date(base);
-      date.setDate(base.getDate() + index);
-
-      // For display, we'll use the first stage as the representative
-      // but show the combined distance and ascent
-      const representativeStage = {
-        ...day.stages[0],
-        distanceKm: day.totalDistanceKm,
-        ascentM: day.totalAscentM,
-        to: day.to,
-        hut: day.hut,
-      };
-
-      itinerary.push({
-        dayIndex: index + 1,
-        date: date.toISOString().slice(0, 10),
-        stage: representativeStage,
-        allStages: day.stages, // Keep all stages for detailed view
-      });
-    });
-
-    return itinerary;
-  }
-
-  function formatShortDate(value) {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  }
+  // ---------------------------------------------------------------------------
+  // Utility functions are now imported from separate modules
+  // - generateAllCombinations: utils/route-generator.js
+  // - buildItineraryFromCombination: utils/date-helpers.js
+  // - formatShortDate: utils/date-helpers.js
+  // - applyFilters: utils/filters.js
+  // ---------------------------------------------------------------------------
 
   // Boot the app once the DOM is ready.
   if (document.readyState === "loading") {

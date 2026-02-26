@@ -25,14 +25,28 @@ This is the first version of a hiking planner focused on the Alta Via 1, a class
 
 ```
 dolomites-hiking-planner/
-├── index.html          # Main HTML entry point
-├── styles.css          # Global styles and utility classes
+├── index.html              # Main HTML entry point
+├── styles.css              # Global styles and utility classes
+├── .nojekyll               # Prevents Jekyll processing on GitHub Pages
+├── package.json            # Node.js dependencies (for testing)
+├── vitest.config.js        # Vitest test configuration
 ├── src/
-│   └── app.js         # Main application logic
-└── README.md          # This file
+│   ├── app.js              # Main application logic (orchestrator)
+│   ├── data/
+│   │   └── alta-via-1.js   # Stage data and constants
+│   └── utils/
+│       ├── route-generator.js  # Route combination generation
+│       ├── filters.js          # Filtering logic
+│       └── date-helpers.js    # Date formatting and itinerary building
+├── tests/
+│   ├── route-generator.test.js
+│   ├── filters.test.js
+│   ├── date-helpers.test.js
+│   └── integration.test.js
+└── README.md               # This file
 ```
 
-The codebase is structured to be easily readable and maintainable. As features grow, the code can be split into logical modules (e.g., `src/data/alta-via-1.js`, `src/components/`, `src/utils/`).
+The codebase is structured to be easily readable and maintainable. Business logic is separated into testable modules, while the main `app.js` orchestrates the UI and user interactions.
 
 ## Running Locally
 
@@ -110,6 +124,39 @@ This project prioritizes:
 2. **Maintainability**: Clear structure that can grow without becoming messy
 3. **Simplicity**: No unnecessary abstractions or tooling
 4. **Static-first**: Keep it simple until there's a clear need for complexity
+
+## Testing
+
+The project includes a comprehensive test suite using Vitest:
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## Deployment to GitHub Pages
+
+The application is fully compatible with GitHub Pages. See [GITHUB_PAGES.md](./GITHUB_PAGES.md) for detailed deployment instructions.
+
+**Quick Steps**:
+1. Ensure `.nojekyll` file exists (already present)
+2. Enable GitHub Pages in repository Settings → Pages
+3. Select `main` branch and `/ (root)` folder
+4. Your site will be available at `https://[username].github.io/[repository-name]`
+
+✅ **ES Modules work perfectly** - All imports use relative paths which resolve correctly on GitHub Pages.
 
 ## Contributing
 
