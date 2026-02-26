@@ -115,6 +115,7 @@
 
     container.appendChild(createHeader());
     container.appendChild(createMain());
+    container.appendChild(createFooter());
 
     root.appendChild(container);
   }
@@ -167,6 +168,72 @@
     main.appendChild(rightColumn);
 
     return main;
+  }
+
+  function createFooter() {
+    const footer = document.createElement("footer");
+    footer.className = "app-footer";
+
+    const footerContent = document.createElement("div");
+    footerContent.className = "app-footer-content";
+
+    const copyright = document.createElement("div");
+    copyright.className = "app-footer-copyright";
+    copyright.textContent = "© 2024 Dolomites Alta Via 1 Planner";
+
+    const socialLinks = document.createElement("div");
+    socialLinks.className = "app-footer-links";
+
+    // Contact information links
+    const links = [
+      {
+        label: "GitHub",
+        url: "https://github.com/gnakayama",
+        icon: "🔗",
+      },
+      {
+        label: "LinkedIn",
+        url: "https://linkedin.com/in/guilherme-nakayama",
+        icon: "💼",
+      },
+      {
+        label: "Email",
+        url: "mailto:guilherme.nakayama.s@gmail.com",
+        icon: "✉️",
+      },
+      {
+        label: "Instagram",
+        url: "https://instagram.com/guilhermenakayama",
+        icon: "📷",
+      },
+    ];
+
+    links.forEach((link) => {
+      const anchor = document.createElement("a");
+      anchor.href = link.url;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.className = "app-footer-link";
+      anchor.setAttribute("aria-label", link.label);
+
+      const icon = document.createElement("span");
+      icon.className = "app-footer-icon";
+      icon.textContent = link.icon;
+
+      const label = document.createElement("span");
+      label.className = "app-footer-label";
+      label.textContent = link.label;
+
+      anchor.appendChild(icon);
+      anchor.appendChild(label);
+      socialLinks.appendChild(anchor);
+    });
+
+    footerContent.appendChild(copyright);
+    footerContent.appendChild(socialLinks);
+    footer.appendChild(footerContent);
+
+    return footer;
   }
 
   function createRouteOverviewPanel() {
