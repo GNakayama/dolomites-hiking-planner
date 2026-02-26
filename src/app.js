@@ -15,7 +15,8 @@
 
 (() => {
   // ---------------------------------------------------------------------------
-  // Static Alta Via 1 data (shortened prototype version)
+  // Static Alta Via 1 data - Complete route with all 15 rifugios
+  // Based on: https://www.hikingwithlee.com/alta-via-1-complete-guide/
   // ---------------------------------------------------------------------------
   const ALTA_VIA_STAGES = [
     {
@@ -23,19 +24,27 @@
       from: "Lago di Braies",
       to: "Rifugio Biella",
       hut: "Rifugio Biella",
-      distanceKm: 12,
-      ascentM: 900,
+      distanceKm: 9,
+      ascentM: 800,
     },
     {
       id: 2,
       from: "Rifugio Biella",
-      to: "Rifugio Fanes",
-      hut: "Rifugio Fanes",
-      distanceKm: 14,
-      ascentM: 650,
+      to: "Rifugio Pederù",
+      hut: "Rifugio Pederù",
+      distanceKm: 12,
+      ascentM: 400,
     },
     {
       id: 3,
+      from: "Rifugio Pederù",
+      to: "Rifugio Fanes",
+      hut: "Rifugio Fanes",
+      distanceKm: 8,
+      ascentM: 450,
+    },
+    {
+      id: 4,
       from: "Rifugio Fanes",
       to: "Rifugio Lagazuoi",
       hut: "Rifugio Lagazuoi",
@@ -43,15 +52,23 @@
       ascentM: 900,
     },
     {
-      id: 4,
+      id: 5,
       from: "Rifugio Lagazuoi",
-      to: "Rifugio Nuvolau",
-      hut: "Rifugio Nuvolau",
-      distanceKm: 9,
-      ascentM: 450,
+      to: "Rifugio Averau",
+      hut: "Rifugio Averau",
+      distanceKm: 6,
+      ascentM: 300,
     },
     {
-      id: 5,
+      id: 6,
+      from: "Rifugio Averau",
+      to: "Rifugio Nuvolau",
+      hut: "Rifugio Nuvolau",
+      distanceKm: 3,
+      ascentM: 150,
+    },
+    {
+      id: 7,
       from: "Rifugio Nuvolau",
       to: "Rifugio Città di Fiume",
       hut: "Rifugio Città di Fiume",
@@ -59,33 +76,73 @@
       ascentM: 600,
     },
     {
-      id: 6,
+      id: 8,
       from: "Rifugio Città di Fiume",
+      to: "Rifugio Coldai",
+      hut: "Rifugio Coldai",
+      distanceKm: 11,
+      ascentM: 700,
+    },
+    {
+      id: 9,
+      from: "Rifugio Coldai",
       to: "Rifugio Tissi",
       hut: "Rifugio Tissi",
-      distanceKm: 15,
+      distanceKm: 14,
       ascentM: 800,
     },
     {
-      id: 7,
+      id: 10,
       from: "Rifugio Tissi",
-      to: "Rifugio Carestiato",
-      hut: "Rifugio Carestiato",
-      distanceKm: 11,
-      ascentM: 550,
+      to: "Rifugio Vazzoler",
+      hut: "Rifugio Vazzoler",
+      distanceKm: 10,
+      ascentM: 500,
     },
     {
-      id: 8,
+      id: 11,
+      from: "Rifugio Vazzoler",
+      to: "Rifugio Carestiato",
+      hut: "Rifugio Carestiato",
+      distanceKm: 12,
+      ascentM: 600,
+    },
+    {
+      id: 12,
       from: "Rifugio Carestiato",
-      to: "La Stanga (Belluno side)",
-      hut: "End in valley",
-      distanceKm: 16,
+      to: "Rifugio Palmieri",
+      hut: "Rifugio Palmieri",
+      distanceKm: 8,
+      ascentM: 350,
+    },
+    {
+      id: 13,
+      from: "Rifugio Palmieri",
+      to: "Rifugio Sommariva al Pramperet",
+      hut: "Rifugio Sommariva al Pramperet",
+      distanceKm: 9,
+      ascentM: 400,
+    },
+    {
+      id: 14,
+      from: "Rifugio Sommariva al Pramperet",
+      to: "Rifugio 7 Alpini",
+      hut: "Rifugio 7 Alpini",
+      distanceKm: 7,
       ascentM: 300,
+    },
+    {
+      id: 15,
+      from: "Rifugio 7 Alpini",
+      to: "La Pissa (Belluno)",
+      hut: "End in valley",
+      distanceKm: 11,
+      ascentM: 200,
     },
   ];
 
-  const MIN_DAYS = 3;
-  const MAX_DAYS = ALTA_VIA_STAGES.length;
+  const MIN_DAYS = 5;
+  const MAX_DAYS = 12;
 
   // Simple in-memory state for the wizard.
   const state = {
@@ -93,6 +150,8 @@
     startDate: "",
     numDays: "",
     itinerary: [],
+    allCombinations: [], // All possible hut combinations for selected days
+    selectedCombinationIndex: null, // Index of selected combination
     errors: {
       startDate: "",
       numDays: "",
@@ -403,7 +462,7 @@
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
-    helper.textContent = `For this prototype, we support ${MIN_DAYS}–${MAX_DAYS} days along the core Alta Via 1 stages.`;
+    helper.textContent = `Choose ${MIN_DAYS}–${MAX_DAYS} days to complete Alta Via 1 from Lago di Braies to Belluno. We'll show you all possible hut combinations.`;
 
     const group = document.createElement("div");
     group.className = "field-group";
@@ -465,7 +524,10 @@
         return;
       }
 
-      state.itinerary = buildItinerary(state.startDate, parsed);
+      // Generate all possible hut combinations for the selected number of days
+      state.allCombinations = generateAllCombinations(parsed);
+      state.selectedCombinationIndex = null;
+      state.itinerary = [];
       state.currentStep = 3;
       renderAppShell();
     });
@@ -483,28 +545,98 @@
 
     const label = document.createElement("div");
     label.className = "field-label";
-    label.textContent = "Step 3 · These are the huts you should aim for";
+    label.textContent = `Step 3 · Choose your ${state.numDays}-day route to Belluno`;
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
     helper.textContent =
-      "Based on your days, we assign one classic Alta Via 1 stage to each hiking day. Distances are approximate but realistic.";
+      `All possible ways to complete Alta Via 1 from Lago di Braies to Belluno in ${state.numDays} days. Each option shows different hut combinations and daily distances.`;
 
     root.appendChild(label);
     root.appendChild(helper);
 
-    if (!state.itinerary.length) {
+    if (!state.allCombinations || state.allCombinations.length === 0) {
       const empty = document.createElement("div");
       empty.className = "field-helper";
       empty.textContent =
-        "Set a start date and number of days first to see your suggested huts.";
+        "Set a start date and number of days first to see hut combinations.";
       root.appendChild(empty);
     } else {
-      const note = document.createElement("div");
-      note.className = "field-helper";
-      note.textContent =
-        "You can refine this later with rest days, variants, and your own hut choices.";
-      root.appendChild(note);
+      const combinationsList = document.createElement("div");
+      combinationsList.className = "combinations-list";
+
+      state.allCombinations.forEach((combination, index) => {
+        const comboCard = document.createElement("div");
+        comboCard.className = `combination-card ${
+          state.selectedCombinationIndex === index ? "combination-selected" : ""
+        }`;
+        comboCard.addEventListener("click", () => {
+          state.selectedCombinationIndex = index;
+          state.itinerary = buildItineraryFromCombination(
+            state.startDate,
+            combination
+          );
+          renderAppShell();
+        });
+
+        const comboHeader = document.createElement("div");
+        comboHeader.className = "combination-header";
+
+        const comboTitle = document.createElement("div");
+        comboTitle.className = "combination-title";
+        comboTitle.textContent = `Option ${index + 1}`;
+
+        const comboStats = document.createElement("div");
+        comboStats.className = "combination-stats";
+
+        const totalDistance = combination.reduce(
+          (sum, day) => sum + day.totalDistanceKm,
+          0
+        );
+        const totalAscent = combination.reduce(
+          (sum, day) => sum + day.totalAscentM,
+          0
+        );
+
+        comboStats.innerHTML = `<span class="accent-text">${totalDistance.toFixed(1)} km</span> · <span>${totalAscent} m up</span>`;
+
+        comboHeader.appendChild(comboTitle);
+        comboHeader.appendChild(comboStats);
+
+        const comboDays = document.createElement("div");
+        comboDays.className = "combination-days";
+
+        combination.forEach((day, dayIndex) => {
+          const dayItem = document.createElement("div");
+          dayItem.className = "combination-day-item";
+
+          const dayLabel = document.createElement("span");
+          dayLabel.className = "combination-day-label";
+          dayLabel.textContent = `Day ${dayIndex + 1}:`;
+
+          const dayInfo = document.createElement("span");
+          dayInfo.className = "combination-day-info";
+          dayInfo.textContent = `${day.totalDistanceKm} km · ${day.hut}`;
+
+          dayItem.appendChild(dayLabel);
+          dayItem.appendChild(dayInfo);
+          comboDays.appendChild(dayItem);
+        });
+
+        comboCard.appendChild(comboHeader);
+        comboCard.appendChild(comboDays);
+        combinationsList.appendChild(comboCard);
+      });
+
+      root.appendChild(combinationsList);
+
+      if (state.selectedCombinationIndex !== null) {
+        const selectedNote = document.createElement("div");
+        selectedNote.className = "field-helper";
+        selectedNote.innerHTML =
+          '<span class="accent-text">✓ Selected</span> · See the detailed itinerary in the right panel.';
+        root.appendChild(selectedNote);
+      }
     }
 
     const buttons = document.createElement("div");
@@ -540,14 +672,25 @@
       empty.className = "stack-sm";
 
       const line = document.createElement("div");
-      line.innerHTML =
-        '<span class="muted-text">No itinerary yet.</span> ' +
-        "Choose a start date and number of days in the wizard to see huts and daily distances.";
+      if (state.currentStep === 3 && state.allCombinations.length > 0) {
+        line.innerHTML =
+          '<span class="muted-text">Select a route option</span> ' +
+          "Click on one of the combinations in Step 3 to see the detailed itinerary here.";
+      } else {
+        line.innerHTML =
+          '<span class="muted-text">No itinerary yet.</span> ' +
+          "Choose a start date and number of days in the wizard to see all possible hut combinations.";
+      }
 
       const hint = document.createElement("div");
       hint.className = "field-helper";
-      hint.textContent =
-        "Once generated, you will see one card per day here, with the hut you should book and the distance you will hike.";
+      if (state.currentStep === 3 && state.allCombinations.length > 0) {
+        hint.textContent =
+          "Each option shows different ways to combine stages, with varying daily distances and hut stops.";
+      } else {
+        hint.textContent =
+          "Once you select a combination, you will see one card per day here, with the hut you should book and the distance you will hike.";
+      }
 
       const warning = document.createElement("span");
       warning.className = "pill pill-danger";
@@ -624,14 +767,27 @@
 
       const route = document.createElement("div");
       route.className = "itinerary-day-meta";
-      route.textContent = `${day.stage.from} → ${day.stage.to}`;
+      
+      // Show combined stages if multiple stages in one day
+      if (day.allStages && day.allStages.length > 1) {
+        const stagesList = day.allStages
+          .map((s, idx) => (idx === 0 ? s.from : s.to))
+          .join(" → ");
+        route.textContent = stagesList;
+      } else {
+        route.textContent = `${day.stage.from} → ${day.stage.to}`;
+      }
 
       const hut = document.createElement("div");
       hut.className = "itinerary-day-meta";
-      hut.textContent =
-        day.stage.hut === "End in valley"
-          ? "Finish in the valley (no hut booking needed)."
-          : `Book: ${day.stage.hut}`;
+      if (day.allStages && day.allStages.length > 1) {
+        hut.textContent = `Combines ${day.allStages.length} stages · Book: ${day.stage.hut === "End in valley" ? "Finish in valley" : day.stage.hut}`;
+      } else {
+        hut.textContent =
+          day.stage.hut === "End in valley"
+            ? "Finish in the valley (no hut booking needed)."
+            : `Book: ${day.stage.hut}`;
+      }
 
       item.appendChild(header);
       item.appendChild(route);
@@ -697,23 +853,110 @@
   // Helpers
   // ---------------------------------------------------------------------------
 
-  function buildItinerary(startDate, numDays) {
+  /**
+   * Generates all possible ways to complete Alta Via 1 in numDays.
+   * Always goes from start (Lago di Braies) to finish (Belluno).
+   * Returns an array of combinations, where each combination is an array of days.
+   */
+  function generateAllCombinations(numDays) {
+    const totalStages = ALTA_VIA_STAGES.length;
+    const combinations = [];
+
+    // We need to partition totalStages into numDays groups
+    // This is equivalent to finding all ways to place (numDays - 1) breaks
+    // between the stages
+    function findPartitions(stagesLeft, daysLeft, currentPartition) {
+      if (daysLeft === 1) {
+        // Last day: take all remaining stages
+        const dayStages = ALTA_VIA_STAGES.slice(
+          totalStages - stagesLeft,
+          totalStages
+        );
+        const day = createDayFromStages(dayStages);
+        const newPartition = [...currentPartition, day];
+        combinations.push(newPartition);
+        return;
+      }
+
+      // For each possible number of stages for the current day
+      // (at least 1, at most stagesLeft - daysLeft + 1)
+      const minStages = 1;
+      const maxStages = stagesLeft - daysLeft + 1;
+
+      for (let stagesToday = minStages; stagesToday <= maxStages; stagesToday += 1) {
+        const dayStages = ALTA_VIA_STAGES.slice(
+          totalStages - stagesLeft,
+          totalStages - stagesLeft + stagesToday
+        );
+        const day = createDayFromStages(dayStages);
+        findPartitions(
+          stagesLeft - stagesToday,
+          daysLeft - 1,
+          [...currentPartition, day]
+        );
+      }
+    }
+
+    findPartitions(totalStages, numDays, []);
+    return combinations;
+  }
+
+  /**
+   * Creates a day object from an array of consecutive stages.
+   */
+  function createDayFromStages(stages) {
+    if (stages.length === 0) return null;
+
+    const totalDistanceKm = stages.reduce(
+      (sum, stage) => sum + stage.distanceKm,
+      0
+    );
+    const totalAscentM = stages.reduce(
+      (sum, stage) => sum + stage.ascentM,
+      0
+    );
+
+    const firstStage = stages[0];
+    const lastStage = stages[stages.length - 1];
+
+    return {
+      stages: stages,
+      from: firstStage.from,
+      to: lastStage.to,
+      hut: lastStage.hut,
+      totalDistanceKm: totalDistanceKm,
+      totalAscentM: totalAscentM,
+    };
+  }
+
+  /**
+   * Builds an itinerary from a selected combination and start date.
+   */
+  function buildItineraryFromCombination(startDate, combination) {
     const itinerary = [];
     const base = startDate ? new Date(startDate) : new Date();
 
-    for (let i = 0; i < numDays; i += 1) {
-      const stage = ALTA_VIA_STAGES[i];
-      if (!stage) break;
-
+    combination.forEach((day, index) => {
       const date = new Date(base);
-      date.setDate(base.getDate() + i);
+      date.setDate(base.getDate() + index);
+
+      // For display, we'll use the first stage as the representative
+      // but show the combined distance and ascent
+      const representativeStage = {
+        ...day.stages[0],
+        distanceKm: day.totalDistanceKm,
+        ascentM: day.totalAscentM,
+        to: day.to,
+        hut: day.hut,
+      };
 
       itinerary.push({
-        dayIndex: i + 1,
+        dayIndex: index + 1,
         date: date.toISOString().slice(0, 10),
-        stage,
+        stage: representativeStage,
+        allStages: day.stages, // Keep all stages for detailed view
       });
-    }
+    });
 
     return itinerary;
   }
