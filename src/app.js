@@ -152,6 +152,7 @@
     itinerary: [],
     allCombinations: [], // All possible hut combinations for selected days
     selectedCombinationIndex: null, // Index of selected combination
+    carouselIndex: 0, // Current visible combination in carousel
     errors: {
       startDate: "",
       numDays: "",
@@ -525,8 +526,11 @@
       }
 
       // Generate all possible hut combinations for the selected number of days
-      state.allCombinations = generateAllCombinations(parsed);
+      // Limit to first 10 combinations for better UX
+      const allCombos = generateAllCombinations(parsed);
+      state.allCombinations = allCombos.slice(0, 10);
       state.selectedCombinationIndex = null;
+      state.carouselIndex = 0; // Reset carousel to first option
       state.itinerary = [];
       state.currentStep = 3;
       renderAppShell();
@@ -549,8 +553,12 @@
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
+    const totalCombos = generateAllCombinations(parseInt(state.numDays, 10)).length;
+    const showingText = state.allCombinations.length < totalCombos 
+      ? `Showing the first ${state.allCombinations.length} of ${totalCombos} possible routes. `
+      : "";
     helper.textContent =
-      `All possible ways to complete Alta Via 1 from Lago di Braies to Belluno in ${state.numDays} days. Each option shows different hut combinations and daily distances.`;
+      `${showingText}All ways to complete Alta Via 1 from Lago di Braies to Belluno in ${state.numDays} days. Use arrows to browse and click to select.`;
 
     root.appendChild(label);
     root.appendChild(helper);
@@ -562,15 +570,47 @@
         "Set a start date and number of days first to see hut combinations.";
       root.appendChild(empty);
     } else {
-      const combinationsList = document.createElement("div");
-      combinationsList.className = "combinations-list";
+      // Carousel container
+      const carouselContainer = document.createElement("div");
+      carouselContainer.className = "carousel-container";
 
+      // Carousel wrapper
+      const carouselWrapper = document.createElement("div");
+      carouselWrapper.className = "carousel-wrapper";
+
+      // Left arrow
+      const leftArrow = document.createElement("button");
+      leftArrow.className = "carousel-arrow carousel-arrow-left";
+      leftArrow.innerHTML = "←";
+      leftArrow.setAttribute("aria-label", "Previous option");
+      leftArrow.disabled = state.carouselIndex === 0;
+      leftArrow.addEventListener("click", () => {
+        if (state.carouselIndex > 0) {
+          state.carouselIndex -= 1;
+          renderAppShell();
+        }
+      });
+
+      // Carousel viewport (container with overflow hidden)
+      const carouselViewport = document.createElement("div");
+      carouselViewport.className = "carousel-viewport";
+
+      // Carousel content (sliding container)
+      const carouselContent = document.createElement("div");
+      carouselContent.className = "carousel-content";
+      carouselContent.style.width = `${state.allCombinations.length * 100}%`;
+      carouselContent.style.transform = `translateX(-${(state.carouselIndex * 100) / state.allCombinations.length}%)`;
+
+      // Create preview for each combination
       state.allCombinations.forEach((combination, index) => {
-        const comboCard = document.createElement("div");
-        comboCard.className = `combination-card ${
-          state.selectedCombinationIndex === index ? "combination-selected" : ""
-        }`;
-        comboCard.addEventListener("click", () => {
+        const comboPreview = createCombinationPreview(
+          combination,
+          index,
+          state.startDate
+        );
+        comboPreview.style.width = `${100 / state.allCombinations.length}%`;
+        comboPreview.style.flexShrink = "0";
+        comboPreview.addEventListener("click", () => {
           state.selectedCombinationIndex = index;
           state.itinerary = buildItineraryFromCombination(
             state.startDate,
@@ -578,63 +618,59 @@
           );
           renderAppShell();
         });
-
-        const comboHeader = document.createElement("div");
-        comboHeader.className = "combination-header";
-
-        const comboTitle = document.createElement("div");
-        comboTitle.className = "combination-title";
-        comboTitle.textContent = `Option ${index + 1}`;
-
-        const comboStats = document.createElement("div");
-        comboStats.className = "combination-stats";
-
-        const totalDistance = combination.reduce(
-          (sum, day) => sum + day.totalDistanceKm,
-          0
-        );
-        const totalAscent = combination.reduce(
-          (sum, day) => sum + day.totalAscentM,
-          0
-        );
-
-        comboStats.innerHTML = `<span class="accent-text">${totalDistance.toFixed(1)} km</span> · <span>${totalAscent} m up</span>`;
-
-        comboHeader.appendChild(comboTitle);
-        comboHeader.appendChild(comboStats);
-
-        const comboDays = document.createElement("div");
-        comboDays.className = "combination-days";
-
-        combination.forEach((day, dayIndex) => {
-          const dayItem = document.createElement("div");
-          dayItem.className = "combination-day-item";
-
-          const dayLabel = document.createElement("span");
-          dayLabel.className = "combination-day-label";
-          dayLabel.textContent = `Day ${dayIndex + 1}:`;
-
-          const dayInfo = document.createElement("span");
-          dayInfo.className = "combination-day-info";
-          dayInfo.textContent = `${day.totalDistanceKm} km · ${day.hut}`;
-
-          dayItem.appendChild(dayLabel);
-          dayItem.appendChild(dayInfo);
-          comboDays.appendChild(dayItem);
-        });
-
-        comboCard.appendChild(comboHeader);
-        comboCard.appendChild(comboDays);
-        combinationsList.appendChild(comboCard);
+        carouselContent.appendChild(comboPreview);
       });
 
-      root.appendChild(combinationsList);
+      carouselViewport.appendChild(carouselContent);
+
+      // Right arrow
+      const rightArrow = document.createElement("button");
+      rightArrow.className = "carousel-arrow carousel-arrow-right";
+      rightArrow.innerHTML = "→";
+      rightArrow.setAttribute("aria-label", "Next option");
+      rightArrow.disabled =
+        state.carouselIndex >= state.allCombinations.length - 1;
+      rightArrow.addEventListener("click", () => {
+        if (state.carouselIndex < state.allCombinations.length - 1) {
+          state.carouselIndex += 1;
+          renderAppShell();
+        }
+      });
+
+      carouselWrapper.appendChild(leftArrow);
+      carouselWrapper.appendChild(carouselViewport);
+      carouselWrapper.appendChild(rightArrow);
+      carouselContainer.appendChild(carouselWrapper);
+
+      // Carousel indicators
+      const indicators = document.createElement("div");
+      indicators.className = "carousel-indicators";
+      state.allCombinations.forEach((_, index) => {
+        const indicator = document.createElement("button");
+        indicator.className = `carousel-indicator ${
+          state.carouselIndex === index ? "carousel-indicator-active" : ""
+        }`;
+        indicator.setAttribute("aria-label", `Go to option ${index + 1}`);
+        indicator.addEventListener("click", () => {
+          state.carouselIndex = index;
+          renderAppShell();
+        });
+        indicators.appendChild(indicator);
+      });
+
+      // Option counter
+      const counter = document.createElement("div");
+      counter.className = "carousel-counter";
+      counter.textContent = `Option ${state.carouselIndex + 1} of ${state.allCombinations.length}`;
+
+      root.appendChild(carouselContainer);
+      root.appendChild(indicators);
+      root.appendChild(counter);
 
       if (state.selectedCombinationIndex !== null) {
         const selectedNote = document.createElement("div");
         selectedNote.className = "field-helper";
-        selectedNote.innerHTML =
-          '<span class="accent-text">✓ Selected</span> · See the detailed itinerary in the right panel.';
+        selectedNote.innerHTML = `<span class="accent-text">✓ Option ${state.selectedCombinationIndex + 1} selected</span> · See the detailed itinerary in the right panel.`;
         root.appendChild(selectedNote);
       }
     }
@@ -655,6 +691,111 @@
     root.appendChild(buttons);
 
     return root;
+  }
+
+  /**
+   * Creates a preview of a combination using the same format as the itinerary summary.
+   */
+  function createCombinationPreview(combination, index, startDate) {
+    const preview = document.createElement("div");
+    preview.className = `combination-preview ${
+      state.selectedCombinationIndex === index ? "combination-preview-selected" : ""
+    }`;
+
+    // Build temporary itinerary for preview
+    const tempItinerary = buildItineraryFromCombination(startDate, combination);
+
+    // Summary stats
+    const totalDistance = combination.reduce(
+      (sum, day) => sum + day.totalDistanceKm,
+      0
+    );
+    const totalAscent = combination.reduce(
+      (sum, day) => sum + day.totalAscentM,
+      0
+    );
+
+    const previewHeader = document.createElement("div");
+    previewHeader.className = "combination-preview-header";
+
+    const previewTitle = document.createElement("div");
+    previewTitle.className = "combination-preview-title";
+    previewTitle.textContent = `Option ${index + 1}`;
+
+    const previewStats = document.createElement("div");
+    previewStats.className = "combination-preview-stats";
+
+    const distanceChip = document.createElement("span");
+    distanceChip.className = "summary-chip";
+    distanceChip.textContent = `${totalDistance.toFixed(1)} km`;
+
+    const ascentChip = document.createElement("span");
+    ascentChip.className = "summary-chip";
+    ascentChip.textContent = `${totalAscent} m up`;
+
+    previewStats.appendChild(distanceChip);
+    previewStats.appendChild(ascentChip);
+
+    previewHeader.appendChild(previewTitle);
+    previewHeader.appendChild(previewStats);
+
+    // Day-by-day list (same format as itinerary summary)
+    const daysList = document.createElement("div");
+    daysList.className = "itinerary-list";
+
+    tempItinerary.forEach((day) => {
+      const item = document.createElement("div");
+      item.className = "itinerary-day";
+
+      const header = document.createElement("div");
+      header.className = "itinerary-day-header";
+
+      const title = document.createElement("div");
+      title.className = "itinerary-day-title";
+      title.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const meta = document.createElement("div");
+      meta.className = "itinerary-day-meta";
+      meta.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m up`;
+
+      header.appendChild(title);
+      header.appendChild(meta);
+
+      const route = document.createElement("div");
+      route.className = "itinerary-day-meta";
+
+      // Show combined stages if multiple stages in one day
+      if (day.allStages && day.allStages.length > 1) {
+        const stagesList = day.allStages
+          .map((s, idx) => (idx === 0 ? s.from : s.to))
+          .join(" → ");
+        route.textContent = stagesList;
+      } else {
+        route.textContent = `${day.stage.from} → ${day.stage.to}`;
+      }
+
+      const hut = document.createElement("div");
+      hut.className = "itinerary-day-meta";
+      if (day.allStages && day.allStages.length > 1) {
+        hut.textContent = `Combines ${day.allStages.length} stages · Book: ${day.stage.hut === "End in valley" ? "Finish in valley" : day.stage.hut}`;
+      } else {
+        hut.textContent =
+          day.stage.hut === "End in valley"
+            ? "Finish in the valley (no hut booking needed)."
+            : `Book: ${day.stage.hut}`;
+      }
+
+      item.appendChild(header);
+      item.appendChild(route);
+      item.appendChild(hut);
+
+      daysList.appendChild(item);
+    });
+
+    preview.appendChild(previewHeader);
+    preview.appendChild(daysList);
+
+    return preview;
   }
 
   // ---------------------------------------------------------------------------

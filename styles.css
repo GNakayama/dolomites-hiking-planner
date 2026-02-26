@@ -422,79 +422,146 @@ body {
   letter-spacing: 0.08em;
 }
 
-/* Combination cards for step 3 */
-.combinations-list {
+/* Carousel for step 3 */
+.carousel-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.carousel-wrapper {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-height: 400px;
 }
 
-.combination-card {
-  border-radius: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.6);
+.carousel-arrow {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
   transition: all 0.2s ease;
+  z-index: 10;
+  align-self: center;
 }
 
-.combination-card:hover {
-  border-color: rgba(34, 197, 94, 0.5);
-  background: rgba(15, 23, 42, 0.85);
-  transform: translateX(2px);
-}
-
-.combination-selected {
+.carousel-arrow:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-soft);
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+  color: var(--accent-strong);
+  transform: scale(1.1);
 }
 
-.combination-header {
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-viewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+.carousel-content {
+  display: flex;
+  height: 100%;
+}
+
+.combination-preview {
+  flex-shrink: 0;
+  border-radius: 0.9rem;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.7);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.combination-preview:hover {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.combination-preview-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+}
+
+.combination-preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
-.combination-title {
-  font-size: 0.85rem;
+.combination-preview-title {
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.combination-stats {
-  font-size: 0.75rem;
-  color: var(--text-soft);
-}
-
-.combination-days {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin-top: 0.4rem;
-}
-
-.combination-day-item {
+.combination-preview-stats {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.carousel-indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.carousel-indicator:hover {
+  background: rgba(148, 163, 184, 0.4);
+  transform: scale(1.2);
+}
+
+.carousel-indicator-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  width: 1.5rem;
+  border-radius: 999px;
+}
+
+.carousel-counter {
+  text-align: center;
   font-size: 0.75rem;
   color: var(--text-soft);
-}
-
-.combination-day-label {
-  font-weight: 500;
-  min-width: 3.5rem;
-}
-
-.combination-day-info {
-  color: var(--text-soft);
-}
-
-.combination-selected .combination-day-label {
-  color: var(--accent-strong);
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 @media (max-width: 600px) {
@@ -507,9 +574,23 @@ body {
     font-size: 0.75rem;
   }
 
-  .combination-header {
+  .carousel-arrow {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  .combination-preview {
+    padding: 0.75rem;
+  }
+
+  .combination-preview-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: 0.5rem;
+  }
+
+  .carousel-indicators {
+    gap: 0.4rem;
   }
 }
