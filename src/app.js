@@ -153,9 +153,15 @@
     allCombinations: [], // All possible hut combinations for selected days
     selectedCombinationIndex: null, // Index of selected combination
     carouselIndex: 0, // Current visible combination in carousel
+    // Optional configuration
+    maxDistancePerDay: "", // Max km per day
+    maxAltitudePerDay: "", // Max ascent meters per day
+    excludedHuts: [], // Array of hut names to exclude
     errors: {
       startDate: "",
       numDays: "",
+      maxDistance: "",
+      maxAltitude: "",
     },
   };
 
@@ -346,7 +352,9 @@
       wrapper.appendChild(createStepStartDate());
     } else if (state.currentStep === 2) {
       wrapper.appendChild(createStepNumDays());
-    } else {
+    } else if (state.currentStep === 3) {
+      wrapper.appendChild(createStepConfiguration());
+    } else if (state.currentStep === 4) {
       wrapper.appendChild(createStepReview());
     }
 
@@ -361,6 +369,7 @@
     const labels = [
       "Start date",
       "Number of days",
+      "Optional filters",
       "Huts & distances",
     ];
 
@@ -525,13 +534,7 @@
         return;
       }
 
-      // Generate all possible hut combinations for the selected number of days
-      // Limit to first 10 combinations for better UX
-      const allCombos = generateAllCombinations(parsed);
-      state.allCombinations = allCombos.slice(0, 10);
-      state.selectedCombinationIndex = null;
-      state.carouselIndex = 0; // Reset carousel to first option
-      state.itinerary = [];
+      // Move to step 3 (filters) - routes will be generated there
       state.currentStep = 3;
       renderAppShell();
     });
@@ -549,7 +552,7 @@
 
     const label = document.createElement("div");
     label.className = "field-label";
-    label.textContent = `Step 3 · Choose your ${state.numDays}-day route to Belluno`;
+    label.textContent = `Step 4 · Choose your ${state.numDays}-day route to Belluno`;
 
     const helper = document.createElement("div");
     helper.className = "field-helper";
@@ -687,10 +690,293 @@
       renderAppShell();
     });
 
+    const next = document.createElement("button");
+    next.className = "btn btn-primary";
+    next.type = "button";
+    next.innerHTML = '<span>Configure filters (optional)</span><span>→</span>';
+    next.addEventListener("click", () => {
+      state.currentStep = 4;
+      renderAppShell();
+    });
+
     buttons.appendChild(back);
+    if (state.selectedCombinationIndex !== null) {
+      buttons.appendChild(next);
+    }
     root.appendChild(buttons);
 
     return root;
+  }
+
+  function createStepConfiguration() {
+    const root = document.createElement("div");
+    root.className = "stack-sm";
+
+    const label = document.createElement("div");
+    label.className = "field-label";
+    label.textContent = "Step 3 · Optional filters & preferences";
+
+    const helper = document.createElement("div");
+    helper.className = "field-helper";
+    helper.textContent =
+      "Set constraints to filter route options. Leave empty to see all options.";
+
+    root.appendChild(label);
+    root.appendChild(helper);
+
+    // Max distance per day
+    const distanceGroup = document.createElement("div");
+    distanceGroup.className = "stack-sm";
+    distanceGroup.style.marginTop = "0.75rem";
+
+    const distanceLabel = document.createElement("label");
+    distanceLabel.className = "field-label";
+    distanceLabel.textContent = "Maximum distance per day (km)";
+    distanceLabel.setAttribute("for", "max-distance");
+
+    const distanceInput = document.createElement("input");
+    distanceInput.id = "max-distance";
+    distanceInput.type = "number";
+    distanceInput.min = "0";
+    distanceInput.step = "1";
+    distanceInput.placeholder = "e.g., 20 (leave empty for no limit)";
+    distanceInput.className = "input";
+    distanceInput.value = state.maxDistancePerDay;
+    distanceInput.addEventListener("input", (e) => {
+      state.maxDistancePerDay = e.target.value;
+      // Routes will be generated when clicking "Generate routes" button
+    });
+
+    distanceGroup.appendChild(distanceLabel);
+    distanceGroup.appendChild(distanceInput);
+
+    if (state.errors.maxDistance) {
+      const error = document.createElement("div");
+      error.className = "error-text";
+      error.textContent = state.errors.maxDistance;
+      distanceGroup.appendChild(error);
+    }
+
+    // Max altitude/ascent per day
+    const altitudeGroup = document.createElement("div");
+    altitudeGroup.className = "stack-sm";
+    altitudeGroup.style.marginTop = "0.75rem";
+
+    const altitudeLabel = document.createElement("label");
+    altitudeLabel.className = "field-label";
+    altitudeLabel.textContent = "Maximum ascent per day (meters)";
+    altitudeLabel.setAttribute("for", "max-altitude");
+
+    const altitudeInput = document.createElement("input");
+    altitudeInput.id = "max-altitude";
+    altitudeInput.type = "number";
+    altitudeInput.min = "0";
+    altitudeInput.step = "50";
+    altitudeInput.placeholder = "e.g., 1000 (leave empty for no limit)";
+    altitudeInput.className = "input";
+    altitudeInput.value = state.maxAltitudePerDay;
+    altitudeInput.addEventListener("input", (e) => {
+      state.maxAltitudePerDay = e.target.value;
+      // Don't regenerate routes here - wait for user to click "Generate routes"
+    });
+
+    altitudeGroup.appendChild(altitudeLabel);
+    altitudeGroup.appendChild(altitudeInput);
+
+    if (state.errors.maxAltitude) {
+      const error = document.createElement("div");
+      error.className = "error-text";
+      error.textContent = state.errors.maxAltitude;
+      altitudeGroup.appendChild(error);
+    }
+
+    // Excluded huts
+    const hutsGroup = document.createElement("div");
+    hutsGroup.className = "stack-sm";
+    hutsGroup.style.marginTop = "0.75rem";
+
+    const hutsLabel = document.createElement("label");
+    hutsLabel.className = "field-label";
+    hutsLabel.textContent = "Exclude huts from routes";
+
+    const hutsHelper = document.createElement("div");
+    hutsHelper.className = "field-helper";
+    hutsHelper.textContent = "Select huts you want to avoid. Routes using these huts will be filtered out.";
+
+    const hutsCheckboxes = document.createElement("div");
+    hutsCheckboxes.className = "huts-checkboxes";
+
+    // Get all unique hut names from stages
+    const allHuts = ALTA_VIA_STAGES.map((stage) => stage.hut).filter(
+      (hut) => hut !== "End in valley"
+    );
+    const uniqueHuts = [...new Set(allHuts)];
+
+    uniqueHuts.forEach((hut) => {
+      const checkboxContainer = document.createElement("label");
+      checkboxContainer.className = "checkbox-container";
+      checkboxContainer.style.display = "flex";
+      checkboxContainer.style.alignItems = "center";
+      checkboxContainer.style.gap = "0.5rem";
+      checkboxContainer.style.marginBottom = "0.5rem";
+      checkboxContainer.style.cursor = "pointer";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = hut;
+      checkbox.checked = state.excludedHuts.includes(hut);
+        checkbox.addEventListener("change", (e) => {
+          if (e.target.checked) {
+            if (!state.excludedHuts.includes(hut)) {
+              state.excludedHuts.push(hut);
+            }
+          } else {
+            state.excludedHuts = state.excludedHuts.filter((h) => h !== hut);
+          }
+          // Don't regenerate routes here - wait for user to click "Generate routes"
+        });
+
+      const checkboxLabel = document.createElement("span");
+      checkboxLabel.textContent = hut;
+      checkboxLabel.style.fontSize = "0.8rem";
+      checkboxLabel.style.color = "var(--text-soft)";
+
+      checkboxContainer.appendChild(checkbox);
+      checkboxContainer.appendChild(checkboxLabel);
+      hutsCheckboxes.appendChild(checkboxContainer);
+    });
+
+    hutsGroup.appendChild(hutsLabel);
+    hutsGroup.appendChild(hutsHelper);
+    hutsGroup.appendChild(hutsCheckboxes);
+
+    root.appendChild(distanceGroup);
+    root.appendChild(altitudeGroup);
+    root.appendChild(hutsGroup);
+
+    // Buttons
+    const buttons = document.createElement("div");
+    buttons.className = "button-row";
+
+    const back = document.createElement("button");
+    back.className = "btn";
+    back.type = "button";
+    back.innerHTML = '<span>←</span><span>Back</span>';
+    back.addEventListener("click", () => {
+      state.currentStep = 2;
+      renderAppShell();
+    });
+
+    const next = document.createElement("button");
+    next.className = "btn btn-primary";
+    next.type = "button";
+    next.innerHTML = '<span>Generate routes</span><span>→</span>';
+    next.addEventListener("click", () => {
+      // Generate routes with filters applied
+      const parsed = parseInt(state.numDays, 10);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+
+      // Generate all possible hut combinations for the selected number of days
+      // Apply filters and limit to first 10
+      const allCombos = generateAllCombinations(parsed);
+      let filtered = allCombos;
+
+      // Apply filters
+      if (state.maxDistancePerDay) {
+        const maxDist = parseFloat(state.maxDistancePerDay);
+        if (!Number.isNaN(maxDist) && maxDist > 0) {
+          filtered = filtered.filter((combo) =>
+            combo.every((day) => day.totalDistanceKm <= maxDist)
+          );
+        }
+      }
+
+      if (state.maxAltitudePerDay) {
+        const maxAlt = parseFloat(state.maxAltitudePerDay);
+        if (!Number.isNaN(maxAlt) && maxAlt > 0) {
+          filtered = filtered.filter((combo) =>
+            combo.every((day) => day.totalAscentM <= maxAlt)
+          );
+        }
+      }
+
+      if (state.excludedHuts.length > 0) {
+        filtered = filtered.filter((combo) =>
+          combo.every((day) => !state.excludedHuts.includes(day.hut))
+        );
+      }
+
+      state.allCombinations = filtered.slice(0, 10);
+      state.selectedCombinationIndex = null;
+      state.carouselIndex = 0; // Reset carousel to first option
+      state.itinerary = [];
+      state.currentStep = 4; // Move to route selection
+      renderAppShell();
+    });
+
+    buttons.appendChild(back);
+    buttons.appendChild(next);
+    root.appendChild(buttons);
+
+    return root;
+  }
+
+  /**
+   * Applies filters and regenerates combinations
+   */
+  function applyFiltersAndRegenerate() {
+    const numDays = parseInt(state.numDays, 10);
+    if (Number.isNaN(numDays)) return;
+
+    // Generate all combinations
+    let allCombos = generateAllCombinations(numDays);
+
+    // Filter by max distance
+    if (state.maxDistancePerDay) {
+      const maxDist = parseFloat(state.maxDistancePerDay);
+      if (!Number.isNaN(maxDist) && maxDist > 0) {
+        allCombos = allCombos.filter((combo) =>
+          combo.every((day) => day.totalDistanceKm <= maxDist)
+        );
+      }
+    }
+
+    // Filter by max altitude/ascent
+    if (state.maxAltitudePerDay) {
+      const maxAlt = parseFloat(state.maxAltitudePerDay);
+      if (!Number.isNaN(maxAlt) && maxAlt > 0) {
+        allCombos = allCombos.filter((combo) =>
+          combo.every((day) => day.totalAscentM <= maxAlt)
+        );
+      }
+    }
+
+    // Filter by excluded huts
+    if (state.excludedHuts.length > 0) {
+      allCombos = allCombos.filter((combo) =>
+        combo.every((day) => !state.excludedHuts.includes(day.hut))
+      );
+    }
+
+    // Limit to first 10 and update
+    state.allCombinations = allCombos.slice(0, 10);
+    state.carouselIndex = Math.min(
+      state.carouselIndex,
+      state.allCombinations.length - 1
+    );
+    
+    // If selected combination is no longer valid, clear selection
+    if (
+      state.selectedCombinationIndex !== null &&
+      state.selectedCombinationIndex >= state.allCombinations.length
+    ) {
+      state.selectedCombinationIndex = null;
+      state.itinerary = [];
+    }
+
+    renderAppShell();
   }
 
   /**
