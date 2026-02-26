@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dolomites Alta Via 1 – Hiking Planner</title>
+    <meta
+      name="description"
+      content="Static hiking planner for the Dolomites Alta Via 1, built with plain JavaScript and Chakra UI via CDN."
+    />
+
+    <!-- Chakra UI via CDN (no build tooling) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@chakra-ui/css-reset@2.1.0/dist/reset.css"
+    />
+    <script src="https://unpkg.com/@chakra-ui/system@2.6.2/dist/chakra-system.min.js" defer></script>
+    <script src="https://unpkg.com/@chakra-ui/react@2.8.2/dist/chakra-react.umd.min.js" defer></script>
+    <script src="https://unpkg.com/@emotion/react@11.11.4/dist/emotion-react.umd.min.js" defer></script>
+    <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js" defer></script>
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="./styles.css" />
+
+    <!-- App script (plain JS, no bundler) -->
+    <script src="./src/app.js" type="module" defer></script>
+  </head>
+  <body>
+    <div id="app-root">
+      <!-- Initial loading fallback -->
+      <noscript>
+        This application requires JavaScript to run. Please enable JavaScript in
+        your browser.
+      </noscript>
+      <div class="app-loading">
+        <span>Loading Dolomites Alta Via 1 planner…</span>
+      </div>
+    </div>
+  </body>
+</html>
+
