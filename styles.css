@@ -1834,6 +1834,126 @@ body {
   font-size: 1.1rem;
 }
 
+/* Preparation Tab Styles */
+.preparation-section {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preparation-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.packing-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.5rem;
+}
+
+.packing-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.packing-item-card:hover {
+  border-color: rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.95);
+  transform: translateX(2px);
+}
+
+.packing-item-card.packing-item-checked {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  opacity: 0.7;
+}
+
+.packing-item-checkbox {
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.packing-item-checked .packing-item-checkbox {
+  color: var(--accent-strong);
+}
+
+.packing-item-text {
+  flex: 1;
+}
+
+.essential-gear-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.essential-gear-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.essential-gear-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.essential-gear-critical {
+  border-left: 3px solid var(--danger);
+}
+
+.essential-gear-recommended {
+  border-left: 3px solid var(--accent);
+}
+
+.essential-gear-icon {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.preparation-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.preparation-list li {
+  margin: 0.5rem 0;
+}
+
+.preparation-day-info {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
 @media (max-width: 600px) {
   .plan-summary-stats {
     gap: 1.5rem;
@@ -1871,6 +1991,10 @@ body {
   }
 
   .navigation-section {
+    padding: 1rem;
+  }
+
+  .preparation-section {
     padding: 1rem;
   }
 

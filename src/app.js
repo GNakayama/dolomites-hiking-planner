@@ -16,6 +16,7 @@ import { ALTA_VIA_STAGES, MIN_DAYS, MAX_DAYS } from './data/alta-via-1.js';
 import { getHutBookingInfo } from './data/hut-booking-links.js';
 import { getHutDetails } from './data/hut-details.js';
 import { getStagePointsOfInterest } from './data/points-of-interest.js';
+import { generatePackingList, getFoodPlanning, getWeatherRecommendations, getEssentialGear } from './data/preparation-data.js';
 import { generateAllCombinations } from './utils/route-generator.js';
 import { applyFilters } from './utils/filters.js';
 import { formatShortDate, buildItineraryFromCombination } from './utils/date-helpers.js';
@@ -2128,21 +2129,168 @@ import { generateGPX, downloadGPX } from './utils/gpx-generator.js';
     heading.className = "plan-section-heading";
     heading.textContent = "Preparation & Supplies";
 
-    const placeholder = document.createElement("div");
-    placeholder.className = "plan-placeholder";
-    placeholder.innerHTML = `
-      <p>🚧 Coming soon: Packing lists and preparation guides</p>
-      <p class="muted-text">This section will include:</p>
-      <ul>
-        <li>Dynamic packing list generator</li>
-        <li>Food planning suggestions</li>
-        <li>Weather-based recommendations</li>
-        <li>Essential gear checklist</li>
-      </ul>
-    `;
+    // General packing list section
+    const packingSection = document.createElement("div");
+    packingSection.className = "preparation-section";
 
+    const packingTitle = document.createElement("h3");
+    packingTitle.className = "preparation-section-title";
+    packingTitle.textContent = "🎒 Packing List";
+
+    const packingList = generatePackingList(
+      parseInt(state.numDays, 10),
+      state.startDate
+    );
+
+    const packingGrid = document.createElement("div");
+    packingGrid.className = "packing-list-grid";
+
+    packingList.forEach((item) => {
+      const itemCard = document.createElement("div");
+      itemCard.className = "packing-item-card";
+      itemCard.innerHTML = `
+        <span class="packing-item-checkbox">☐</span>
+        <span class="packing-item-text">${item}</span>
+      `;
+      itemCard.addEventListener("click", () => {
+        const checkbox = itemCard.querySelector(".packing-item-checkbox");
+        if (checkbox.textContent === "☐") {
+          checkbox.textContent = "☑";
+          itemCard.classList.add("packing-item-checked");
+        } else {
+          checkbox.textContent = "☐";
+          itemCard.classList.remove("packing-item-checked");
+        }
+      });
+      packingGrid.appendChild(itemCard);
+    });
+
+    packingSection.appendChild(packingTitle);
+    packingSection.appendChild(packingGrid);
     content.appendChild(heading);
-    content.appendChild(placeholder);
+    content.appendChild(packingSection);
+
+    // Essential gear section
+    const essentialGear = getEssentialGear();
+    const essentialSection = document.createElement("div");
+    essentialSection.className = "preparation-section";
+
+    const essentialTitle = document.createElement("h3");
+    essentialTitle.className = "preparation-section-title";
+    essentialTitle.textContent = "⚠️ Essential Gear (Don't Leave Without These)";
+
+    const criticalList = document.createElement("div");
+    criticalList.className = "essential-gear-list";
+    essentialGear.critical.forEach((item) => {
+      const gearItem = document.createElement("div");
+      gearItem.className = "essential-gear-item essential-gear-critical";
+      gearItem.innerHTML = `<span class="essential-gear-icon">🔴</span><span>${item}</span>`;
+      criticalList.appendChild(gearItem);
+    });
+
+    const recommendedList = document.createElement("div");
+    recommendedList.className = "essential-gear-list";
+    recommendedList.style.marginTop = "1rem";
+    const recommendedTitle = document.createElement("div");
+    recommendedTitle.className = "essential-gear-subtitle";
+    recommendedTitle.textContent = "Recommended:";
+    recommendedList.appendChild(recommendedTitle);
+    essentialGear.recommended.forEach((item) => {
+      const gearItem = document.createElement("div");
+      gearItem.className = "essential-gear-item essential-gear-recommended";
+      gearItem.innerHTML = `<span class="essential-gear-icon">🟢</span><span>${item}</span>`;
+      recommendedList.appendChild(gearItem);
+    });
+
+    essentialSection.appendChild(essentialTitle);
+    essentialSection.appendChild(criticalList);
+    essentialSection.appendChild(recommendedList);
+    content.appendChild(essentialSection);
+
+    // Weather recommendations
+    const weatherRecs = getWeatherRecommendations(
+      state.startDate,
+      parseInt(state.numDays, 10)
+    );
+    if (weatherRecs.length > 0) {
+      weatherRecs.forEach((rec) => {
+        const weatherSection = document.createElement("div");
+        weatherSection.className = "preparation-section";
+
+        const weatherTitle = document.createElement("h3");
+        weatherTitle.className = "preparation-section-title";
+        weatherTitle.textContent = `🌤️ ${rec.title}`;
+
+        const weatherList = document.createElement("ul");
+        weatherList.className = "preparation-list";
+        rec.items.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          weatherList.appendChild(li);
+        });
+
+        weatherSection.appendChild(weatherTitle);
+        weatherSection.appendChild(weatherList);
+        content.appendChild(weatherSection);
+      });
+    }
+
+    // Day-by-day food planning
+    const foodSection = document.createElement("div");
+    foodSection.className = "preparation-section";
+
+    const foodTitle = document.createElement("h3");
+    foodTitle.className = "preparation-section-title";
+    foodTitle.textContent = "🍽️ Food Planning by Day";
+
+    const foodList = document.createElement("div");
+    foodList.className = "plan-itinerary-list";
+
+    state.itinerary.forEach((day) => {
+      const dayCard = document.createElement("div");
+      dayCard.className = "plan-day-card";
+
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "plan-day-header";
+
+      const dayTitle = document.createElement("div");
+      dayTitle.className = "plan-day-title";
+      dayTitle.textContent = `Day ${day.dayIndex} · ${formatShortDate(day.date)}`;
+
+      const dayMeta = document.createElement("div");
+      dayMeta.className = "plan-day-meta";
+      dayMeta.textContent = `${day.stage.distanceKm} km · ${day.stage.ascentM} m ascent`;
+
+      dayHeader.appendChild(dayTitle);
+      dayHeader.appendChild(dayMeta);
+      dayCard.appendChild(dayHeader);
+
+      // Get hut details for food planning
+      const hutDetails = getHutDetails(day.stage.hut);
+      const foodSuggestions = getFoodPlanning(day, hutDetails);
+
+      if (foodSuggestions.length > 0) {
+        const foodInfo = document.createElement("div");
+        foodInfo.className = "preparation-day-info";
+
+        const foodListItems = document.createElement("ul");
+        foodListItems.className = "preparation-list";
+        foodSuggestions.forEach((suggestion) => {
+          const li = document.createElement("li");
+          li.textContent = suggestion;
+          foodListItems.appendChild(li);
+        });
+
+        foodInfo.appendChild(foodListItems);
+        dayCard.appendChild(foodInfo);
+      }
+
+      foodList.appendChild(dayCard);
+    });
+
+    foodSection.appendChild(foodTitle);
+    foodSection.appendChild(foodList);
+    content.appendChild(foodSection);
 
     return content;
   }
