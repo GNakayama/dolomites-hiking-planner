@@ -33,11 +33,13 @@ dolomites-hiking-planner/
 ├── src/
 │   ├── app.js              # Main application logic (orchestrator)
 │   ├── data/
-│   │   └── alta-via-1.js   # Stage data and constants
+│   │   ├── alta-via-1.js       # Stage data and constants
+│   │   ├── hut-booking-links.js # Hut booking URLs and links
+│   │   └── hut-details.js       # Detailed hut information
 │   └── utils/
 │       ├── route-generator.js  # Route combination generation
 │       ├── filters.js          # Filtering logic
-│       └── date-helpers.js    # Date formatting and itinerary building
+│       └── date-helpers.js     # Date formatting and itinerary building
 ├── tests/
 │   ├── route-generator.test.js
 │   ├── filters.test.js
@@ -145,6 +147,53 @@ npm run test:ui
 # Generate coverage report
 npm run test:coverage
 ```
+
+## Development Features
+
+### State Persistence (localStorage)
+
+The application automatically saves your progress to browser localStorage, so you can:
+- **Refresh the page** without losing your work
+- **Close and reopen** the browser - your selections persist
+- **Continue where you left off** - dates, filters, and selected routes are remembered
+
+**What gets saved:**
+- Start date and number of days
+- Filter settings (min/max distance, altitude, excluded huts)
+- Current wizard step
+- Selected route combination
+- Current view (wizard or hiking plan)
+
+**What gets regenerated:**
+- Route combinations (regenerated from saved filters on page load)
+- Itinerary (regenerated from selected combination)
+
+This keeps localStorage small while preserving your progress.
+
+### Dev Mode (Quick Testing)
+
+For faster development and testing, you can enable **Dev Mode** which auto-fills the wizard:
+
+**How to enable:**
+1. Add `?dev` to your URL: `http://localhost:8000/?dev`
+2. The page will automatically:
+   - Set start date to today
+   - Set number of days to 6
+   - Generate route combinations
+   - Select the first route
+   - Jump to route selection step
+
+**Dev Mode features:**
+- Green banner at the top indicates dev mode is active
+- "Disable" button to turn off dev mode
+- Persists across refreshes (until disabled)
+- Perfect for quickly testing the hiking plan view
+
+**To disable:**
+- Click the "Disable" button in the dev mode banner, or
+- Clear localStorage: Open browser console and run `localStorage.removeItem('alta-via-1-dev-mode')`
+
+**Note:** Dev mode is intended for development only. Users won't see it unless they manually add `?dev` to the URL.
 
 ## Deployment to GitHub Pages
 
