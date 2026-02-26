@@ -25,6 +25,100 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
   // See: data/alta-via-1.js, utils/route-generator.js, utils/filters.js, utils/date-helpers.js
   // ---------------------------------------------------------------------------
 
+  // State persistence key
+  const STATE_STORAGE_KEY = "alta-via-1-planner-state";
+  const DEV_MODE_KEY = "alta-via-1-dev-mode";
+
+  /**
+   * Loads state from localStorage
+   */
+  function loadStateFromStorage() {
+    try {
+      const saved = localStorage.getItem(STATE_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Don't restore errors
+        parsed.errors = {
+          startDate: "",
+          numDays: "",
+          maxDistance: "",
+          maxAltitude: "",
+        };
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to load state from localStorage:", e);
+    }
+    return null;
+  }
+
+  /**
+   * Saves state to localStorage
+   */
+  function saveStateToStorage() {
+    try {
+      // Don't save large arrays (combinations, itinerary) to keep storage small
+      const stateToSave = {
+        currentView: state.currentView,
+        currentStep: state.currentStep,
+        startDate: state.startDate,
+        numDays: state.numDays,
+        minDistancePerDay: state.minDistancePerDay,
+        maxDistancePerDay: state.maxDistancePerDay,
+        maxAltitudePerDay: state.maxAltitudePerDay,
+        excludedHuts: state.excludedHuts,
+        selectedCombinationIndex: state.selectedCombinationIndex,
+        carouselIndex: state.carouselIndex,
+      };
+      localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch (e) {
+      console.warn("Failed to save state to localStorage:", e);
+    }
+  }
+
+  /**
+   * Dev mode: Auto-fills wizard with sample data for quick testing
+   */
+  function enableDevMode() {
+    const today = new Date();
+    const startDate = today.toISOString().slice(0, 10);
+    
+    state.startDate = startDate;
+    state.numDays = "6";
+    state.currentStep = 5; // Jump to route selection
+    
+    // Generate combinations
+    const allCombos = generateAllCombinations(6);
+    state.allCombinations = allCombos.slice(0, 10);
+    
+    // Select first combination and build itinerary
+    if (state.allCombinations.length > 0) {
+      state.selectedCombinationIndex = 0;
+      state.carouselIndex = 0;
+      state.itinerary = buildItineraryFromCombination(startDate, state.allCombinations[0]);
+    }
+    
+    saveStateToStorage();
+    renderAppShell();
+  }
+
+  /**
+   * Checks if dev mode should be enabled (URL parameter or localStorage)
+   */
+  function checkDevMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasDevParam = urlParams.has("dev");
+    const savedDevMode = localStorage.getItem(DEV_MODE_KEY) === "true";
+    
+    if (hasDevParam || savedDevMode) {
+      if (hasDevParam) {
+        localStorage.setItem(DEV_MODE_KEY, "true");
+      }
+      return true;
+    }
+    return false;
+  }
+
   // Simple in-memory state for the wizard.
   const state = {
     currentView: "wizard", // "wizard" or "plan"
@@ -47,6 +141,44 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       maxAltitude: "",
     },
   };
+
+  // Load state from localStorage on init
+  const savedState = loadStateFromStorage();
+  if (savedState) {
+    Object.assign(state, savedState);
+    
+    // Regenerate combinations and itinerary if we have the data
+    if (state.startDate && state.numDays) {
+      const numDays = parseInt(state.numDays, 10);
+      if (!Number.isNaN(numDays)) {
+        // Regenerate combinations
+        const allCombos = generateAllCombinations(numDays);
+        const filtered = applyFilters(allCombos, {
+          minDistancePerDay: state.minDistancePerDay,
+          maxDistancePerDay: state.maxDistancePerDay,
+          maxAltitudePerDay: state.maxAltitudePerDay,
+          excludedHuts: state.excludedHuts,
+        });
+        state.allCombinations = filtered.slice(0, 10);
+        
+        // Restore selected combination if valid
+        if (
+          state.selectedCombinationIndex !== null &&
+          state.selectedCombinationIndex < state.allCombinations.length
+        ) {
+          state.itinerary = buildItineraryFromCombination(
+            state.startDate,
+            state.allCombinations[state.selectedCombinationIndex]
+          );
+        }
+      }
+    }
+  }
+
+  // Check for dev mode (after loading saved state)
+  if (checkDevMode()) {
+    enableDevMode();
+  }
 
   /**
    * Mounts the static app shell into the `#app-root` element.
@@ -338,6 +470,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     }
     input.addEventListener("input", (event) => {
       state.startDate = event.target.value;
+      saveStateToStorage();
       state.errors.startDate = "";
     });
 
@@ -368,6 +501,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
         return;
       }
       state.currentStep = state.currentStep + 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -404,6 +538,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     }
     input.addEventListener("input", (event) => {
       state.numDays = event.target.value;
+      saveStateToStorage();
       state.errors.numDays = "";
     });
 
@@ -429,6 +564,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
       state.currentStep = state.currentStep - 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -451,6 +587,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
       // Move to step 3 (filters) - routes will be generated there
       state.currentStep = state.currentStep + 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -534,6 +671,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
             state.startDate,
             combination
           );
+          saveStateToStorage();
           renderAppShell();
         });
         carouselContent.appendChild(comboPreview);
@@ -551,6 +689,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       rightArrow.addEventListener("click", () => {
         if (state.carouselIndex < state.allCombinations.length - 1) {
           state.carouselIndex += 1;
+          saveStateToStorage();
           renderAppShell();
         }
       });
@@ -571,6 +710,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
         indicator.setAttribute("aria-label", `Go to option ${index + 1}`);
         indicator.addEventListener("click", () => {
           state.carouselIndex = index;
+          saveStateToStorage();
           renderAppShell();
         });
         indicators.appendChild(indicator);
@@ -602,6 +742,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
       state.currentStep = state.currentStep - 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -716,6 +857,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     altitudeInput.value = state.maxAltitudePerDay;
     altitudeInput.addEventListener("input", (e) => {
       state.maxAltitudePerDay = e.target.value;
+      saveStateToStorage();
     });
 
     altitudeGroup.appendChild(altitudeLabel);
@@ -742,6 +884,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
       state.currentStep = state.currentStep - 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -751,6 +894,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     next.innerHTML = '<span>Next</span><span>→</span>';
     next.addEventListener("click", () => {
       state.currentStep = state.currentStep + 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -904,6 +1048,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
       state.currentStep = state.currentStep - 1;
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -978,6 +1123,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       state.itinerary = [];
     }
 
+    saveStateToStorage();
     renderAppShell();
   }
 
@@ -1239,6 +1385,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     actionButton.innerHTML = '<span>🎒 Generate Hiking Plan</span><span>→</span>';
     actionButton.addEventListener("click", () => {
       state.currentView = "plan";
+      saveStateToStorage();
       renderAppShell();
     });
 
@@ -1312,6 +1459,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     backButton.innerHTML = '<span>←</span><span>Back to Planner</span>';
     backButton.addEventListener("click", () => {
       state.currentView = "wizard";
+      saveStateToStorage();
       renderAppShell();
     });
 
