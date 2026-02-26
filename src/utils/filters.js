@@ -1,4 +1,15 @@
 /**
+ * Filters combinations by minimum distance per day
+ */
+export function filterByMinDistance(combinations, minDistanceKm) {
+  if (!minDistanceKm || minDistanceKm <= 0) return combinations;
+  
+  return combinations.filter((combo) =>
+    combo.every((day) => day.totalDistanceKm >= minDistanceKm)
+  );
+}
+
+/**
  * Filters combinations by maximum distance per day
  */
 export function filterByMaxDistance(combinations, maxDistanceKm) {
@@ -36,6 +47,13 @@ export function filterByExcludedHuts(combinations, excludedHuts) {
  */
 export function applyFilters(combinations, filters) {
   let filtered = combinations;
+  
+  if (filters.minDistancePerDay) {
+    const minDist = parseFloat(filters.minDistancePerDay);
+    if (!Number.isNaN(minDist) && minDist > 0) {
+      filtered = filterByMinDistance(filtered, minDist);
+    }
+  }
   
   if (filters.maxDistancePerDay) {
     const maxDist = parseFloat(filters.maxDistancePerDay);

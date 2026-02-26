@@ -34,6 +34,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     selectedCombinationIndex: null, // Index of selected combination
     carouselIndex: 0, // Current visible combination in carousel
     // Optional configuration
+    minDistancePerDay: "", // Min km per day
     maxDistancePerDay: "", // Max km per day
     maxAltitudePerDay: "", // Max ascent meters per day
     excludedHuts: [], // Array of hut names to exclude
@@ -420,7 +421,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     const next = document.createElement("button");
     next.className = "btn btn-primary";
     next.type = "button";
-    next.innerHTML = '<span>See huts & distances</span><span>→</span>';
+    next.innerHTML = '<span>Next</span><span>→</span>';
     next.addEventListener("click", () => {
       const parsed = parseInt(state.numDays, 10);
       if (Number.isNaN(parsed)) {
@@ -584,7 +585,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     const back = document.createElement("button");
     back.className = "btn";
     back.type = "button";
-    back.innerHTML = '<span>←</span><span>Adjust days</span>';
+    back.innerHTML = '<span>←</span><span>Back</span>';
     back.addEventListener("click", () => {
       state.currentStep = state.currentStep - 1;
       renderAppShell();
@@ -619,10 +620,35 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
     const helper = document.createElement("div");
     helper.className = "field-helper";
     helper.textContent =
-      "Set maximum distance and ascent per day. Leave empty to see all options.";
+      "Set minimum and maximum distance, and maximum ascent per day. Leave empty to see all options.";
 
     root.appendChild(label);
     root.appendChild(helper);
+
+    // Min distance per day
+    const minDistanceGroup = document.createElement("div");
+    minDistanceGroup.className = "stack-sm";
+    minDistanceGroup.style.marginTop = "0.75rem";
+
+    const minDistanceLabel = document.createElement("label");
+    minDistanceLabel.className = "field-label";
+    minDistanceLabel.textContent = "Minimum distance per day (km)";
+    minDistanceLabel.setAttribute("for", "min-distance");
+
+    const minDistanceInput = document.createElement("input");
+    minDistanceInput.id = "min-distance";
+    minDistanceInput.type = "number";
+    minDistanceInput.min = "0";
+    minDistanceInput.step = "1";
+    minDistanceInput.placeholder = "e.g., 8 (leave empty for no minimum)";
+    minDistanceInput.className = "input";
+    minDistanceInput.value = state.minDistancePerDay;
+    minDistanceInput.addEventListener("input", (e) => {
+      state.minDistancePerDay = e.target.value;
+    });
+
+    minDistanceGroup.appendChild(minDistanceLabel);
+    minDistanceGroup.appendChild(minDistanceInput);
 
     // Max distance per day
     const distanceGroup = document.createElement("div");
@@ -688,6 +714,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       altitudeGroup.appendChild(error);
     }
 
+    root.appendChild(minDistanceGroup);
     root.appendChild(distanceGroup);
     root.appendChild(altitudeGroup);
 
@@ -817,6 +844,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       // Apply filters and limit to first 10
       const allCombos = generateAllCombinations(parsed);
       const filtered = applyFilters(allCombos, {
+        minDistancePerDay: state.minDistancePerDay,
         maxDistancePerDay: state.maxDistancePerDay,
         maxAltitudePerDay: state.maxAltitudePerDay,
         excludedHuts: state.excludedHuts,
@@ -829,12 +857,6 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       state.currentStep = 5; // Move to route selection
       renderAppShell();
     });
-
-    buttons.appendChild(back);
-    buttons.appendChild(next);
-    root.appendChild(buttons);
-
-    return root;
 
     buttons.appendChild(back);
     buttons.appendChild(next);
@@ -856,6 +878,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
     // Apply filters using imported utility
     const filtered = applyFilters(allCombos, {
+      minDistancePerDay: state.minDistancePerDay,
       maxDistancePerDay: state.maxDistancePerDay,
       maxAltitudePerDay: state.maxAltitudePerDay,
       excludedHuts: state.excludedHuts,

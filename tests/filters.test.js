@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  filterByMinDistance,
   filterByMaxDistance,
   filterByMaxAltitude,
   filterByExcludedHuts,
@@ -22,6 +23,43 @@ describe('Filters', () => {
       { totalDistanceKm: 11, totalAscentM: 550, hut: 'Rifugio C' },
     ],
   ];
+
+  describe('filterByMinDistance', () => {
+    it('should return all combinations when minDistance is not provided', () => {
+      const result = filterByMinDistance(mockCombinations, null);
+      expect(result).toEqual(mockCombinations);
+    });
+
+    it('should return all combinations when minDistance is 0 or negative', () => {
+      expect(filterByMinDistance(mockCombinations, 0)).toEqual(mockCombinations);
+      expect(filterByMinDistance(mockCombinations, -10)).toEqual(mockCombinations);
+    });
+
+    it('should filter out combinations below minimum distance', () => {
+      const result = filterByMinDistance(mockCombinations, 12);
+      
+      // First combination has 15,12 (both >= 12) - passes
+      // Second combination has 20,18 (both >= 12) - passes
+      // Third combination has 10,11 (both < 12) - filtered
+      expect(result.length).toBe(2);
+      expect(result).not.toContain(mockCombinations[2]);
+    });
+
+    it('should filter based on all days in combination', () => {
+      const result = filterByMinDistance(mockCombinations, 15);
+      
+      // First combination has 15,12 (12 < 15) - filtered
+      // Second combination has 20,18 (both >= 15) - passes
+      // Third combination has 10,11 (both < 15) - filtered
+      expect(result.length).toBe(1);
+      expect(result[0]).toEqual(mockCombinations[1]);
+    });
+
+    it('should return empty array if no combinations meet minimum', () => {
+      const result = filterByMinDistance(mockCombinations, 25);
+      expect(result).toEqual([]);
+    });
+  });
 
   describe('filterByMaxDistance', () => {
     it('should return all combinations when maxDistance is not provided', () => {
@@ -129,12 +167,33 @@ describe('Filters', () => {
       expect(result).toEqual(mockCombinations);
     });
 
-    it('should apply distance filter', () => {
+    it('should apply minimum distance filter', () => {
+      const filters = { minDistancePerDay: '12' };
+      const result = applyFilters(mockCombinations, filters);
+      
+      // First and second combinations pass (all days >= 12)
+      // Third combination filtered (has days < 12)
+      expect(result.length).toBe(2);
+      expect(result).not.toContain(mockCombinations[2]);
+    });
+
+    it('should apply maximum distance filter', () => {
       const filters = { maxDistancePerDay: '15' };
       const result = applyFilters(mockCombinations, filters);
       
       expect(result.length).toBe(2);
       expect(result).not.toContain(mockCombinations[1]);
+    });
+
+    it('should apply both min and max distance filters', () => {
+      const filters = { minDistancePerDay: '12', maxDistancePerDay: '15' };
+      const result = applyFilters(mockCombinations, filters);
+      
+      // First combination: 15,12 (both between 12-15) - passes
+      // Second combination: 20,18 (both > 15) - filtered
+      // Third combination: 10,11 (both < 12) - filtered
+      expect(result.length).toBe(1);
+      expect(result[0]).toEqual(mockCombinations[0]);
     });
 
     it('should apply altitude filter', () => {
