@@ -1191,6 +1191,301 @@ body {
   }
 }
 
+/* Hut Information Styles */
+.hut-info-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hut-info-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.hut-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.hut-basic-info {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.hut-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.hut-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.hut-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hut-time-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.hut-time-label {
+  color: var(--text-soft);
+}
+
+.hut-time-value {
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.hut-facilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.hut-facility-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.hut-facility-item.available {
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--text);
+}
+
+.hut-facility-item.unavailable {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: var(--text-soft);
+  opacity: 0.6;
+}
+
+.hut-facility-icon {
+  font-weight: 700;
+  width: 1rem;
+  text-align: center;
+}
+
+.hut-facility-item.available .hut-facility-icon {
+  color: var(--accent);
+}
+
+.hut-facility-item.unavailable .hut-facility-icon {
+  color: var(--text-soft);
+}
+
+.hut-facility-label {
+  flex: 1;
+}
+
+.hut-meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.hut-meal-item {
+  padding: 0.4rem 0.6rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.hut-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hut-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.hut-contact-link:hover {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hut-booking-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0.75rem;
+  color: #ecfdf5;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.hut-booking-button:hover {
+  background: var(--accent-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.hut-booking-note {
+  padding: 0.75rem 1rem;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.hut-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.hut-notes-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.hut-note {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-style: italic;
+}
+
+/* Commuting Tab Styles */
+.commuting-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.commuting-section {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.commuting-section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.commuting-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commuting-method-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.commuting-method-card:hover {
+  border-color: rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.commuting-method-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-strong);
+  margin-bottom: 0.75rem;
+}
+
+.commuting-method-details {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.commuting-method-details li {
+  margin: 0.4rem 0;
+}
+
+.commuting-tips {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.commuting-tips ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.commuting-tips li {
+  margin: 0.5rem 0;
+}
+
+.commuting-tips strong {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
 @media (max-width: 600px) {
   .plan-summary-stats {
     gap: 1.5rem;
@@ -1203,5 +1498,21 @@ body {
   .plan-day-header {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .hut-facilities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hut-contact-link {
+    width: 100%;
+  }
+
+  .commuting-section {
+    padding: 1rem;
+  }
+
+  .commuting-sections {
+    gap: 1.5rem;
   }
 }

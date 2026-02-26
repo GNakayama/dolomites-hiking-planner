@@ -1543,6 +1543,7 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
       { id: "navigation", label: "Navigation" },
       { id: "huts", label: "Huts & Booking" },
       { id: "preparation", label: "Preparation" },
+      { id: "commuting", label: "Commuting" },
       { id: "tips", label: "Tips & Points of Interest" },
     ];
 
@@ -1592,6 +1593,9 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
         break;
       case "preparation":
         container.appendChild(createPreparationTab());
+        break;
+      case "commuting":
+        container.appendChild(createCommutingTab());
         break;
       case "tips":
         container.appendChild(createTipsTab());
@@ -1999,6 +2003,195 @@ import { formatShortDate, buildItineraryFromCombination } from './utils/date-hel
 
     content.appendChild(heading);
     content.appendChild(placeholder);
+
+    return content;
+  }
+
+  function createCommutingTab() {
+    const content = document.createElement("div");
+    content.className = "plan-tab-content";
+
+    const heading = document.createElement("h2");
+    heading.className = "plan-section-heading";
+    heading.textContent = "Getting There & Back";
+
+    const commutingList = document.createElement("div");
+    commutingList.className = "commuting-sections";
+
+    // Getting to Lago di Braies (Start)
+    const startSection = document.createElement("div");
+    startSection.className = "commuting-section";
+
+    const startTitle = document.createElement("h3");
+    startTitle.className = "commuting-section-title";
+    startTitle.innerHTML = "📍 Getting to Lago di Braies (Start)";
+
+    const startContent = document.createElement("div");
+    startContent.className = "commuting-content";
+
+    const startMethods = [
+      {
+        method: "🚗 By Car",
+        details: [
+          "Drive to Prags (Braies) in South Tyrol",
+          "Parking available near Lago di Braies (paid parking, ~€5-10/day)",
+          "Arrive early in peak season (parking fills up by 9-10 AM)",
+          "GPS coordinates: 46.6942° N, 12.0847° E",
+        ],
+      },
+      {
+        method: "🚌 By Bus",
+        details: [
+          "From Bolzano: Take bus 340 to Dobbiaco, then bus 442 to Lago di Braies",
+          "From Cortina d'Ampezzo: Take bus 445 to Lago di Braies",
+          "Check SAD (South Tyrol public transport) schedules",
+          "Bus runs seasonally (typically June-September)",
+        ],
+      },
+      {
+        method: "✈️ By Plane",
+        details: [
+          "Nearest airports: Venice (VCE), Innsbruck (INN), or Munich (MUC)",
+          "From Venice: ~3.5 hours by car/bus",
+          "From Innsbruck: ~2 hours by car",
+          "Consider renting a car or taking a combination of train + bus",
+        ],
+      },
+      {
+        method: "🚂 By Train",
+        details: [
+          "Nearest train station: Dobbiaco/Toblach",
+          "From Dobbiaco: Take bus 442 to Lago di Braies (~20 minutes)",
+          "Train connections from major cities (Venice, Munich, etc.)",
+        ],
+      },
+    ];
+
+    startMethods.forEach((method) => {
+      const methodCard = document.createElement("div");
+      methodCard.className = "commuting-method-card";
+
+      const methodTitle = document.createElement("div");
+      methodTitle.className = "commuting-method-title";
+      methodTitle.textContent = method.method;
+
+      const methodDetails = document.createElement("ul");
+      methodDetails.className = "commuting-method-details";
+      method.details.forEach((detail) => {
+        const li = document.createElement("li");
+        li.textContent = detail;
+        methodDetails.appendChild(li);
+      });
+
+      methodCard.appendChild(methodTitle);
+      methodCard.appendChild(methodDetails);
+      startContent.appendChild(methodCard);
+    });
+
+    startSection.appendChild(startTitle);
+    startSection.appendChild(startContent);
+
+    // Getting from Belluno (End)
+    const endSection = document.createElement("div");
+    endSection.className = "commuting-section";
+
+    const endTitle = document.createElement("h3");
+    endTitle.className = "commuting-section-title";
+    endTitle.innerHTML = "📍 Getting from Belluno (End)";
+
+    const endContent = document.createElement("div");
+    endContent.className = "commuting-content";
+
+    const endMethods = [
+      {
+        method: "🚂 By Train",
+        details: [
+          "Belluno has a train station with good connections",
+          "Direct trains to Venice (Mestre) - ~1.5 hours",
+          "Connections to major Italian cities (Milan, Rome, etc.)",
+          "Check Trenitalia schedules",
+        ],
+      },
+      {
+        method: "🚌 By Bus",
+        details: [
+          "Local buses connect Belluno to surrounding areas",
+          "Bus to Cortina d'Ampezzo available",
+          "Check Dolomiti Bus schedules",
+        ],
+      },
+      {
+        method: "🚗 By Car",
+        details: [
+          "If you left a car at Lago di Braies, you'll need to return (~2.5 hours drive)",
+          "Consider arranging a shuttle service",
+          "Or take public transport back to start",
+        ],
+      },
+      {
+        method: "✈️ From Airport",
+        details: [
+          "Venice Airport (VCE) is closest - ~1.5 hours by car/train",
+          "Train: Belluno → Mestre → Airport",
+          "Consider staying overnight in Belluno before departure",
+        ],
+      },
+    ];
+
+    endMethods.forEach((method) => {
+      const methodCard = document.createElement("div");
+      methodCard.className = "commuting-method-card";
+
+      const methodTitle = document.createElement("div");
+      methodTitle.className = "commuting-method-title";
+      methodTitle.textContent = method.method;
+
+      const methodDetails = document.createElement("ul");
+      methodDetails.className = "commuting-method-details";
+      method.details.forEach((detail) => {
+        const li = document.createElement("li");
+        li.textContent = detail;
+        methodDetails.appendChild(li);
+      });
+
+      methodCard.appendChild(methodTitle);
+      methodCard.appendChild(methodDetails);
+      endContent.appendChild(methodCard);
+    });
+
+    endSection.appendChild(endTitle);
+    endSection.appendChild(endContent);
+
+    // Tips section
+    const tipsSection = document.createElement("div");
+    tipsSection.className = "commuting-section";
+
+    const tipsTitle = document.createElement("h3");
+    tipsTitle.className = "commuting-section-title";
+    tipsTitle.innerHTML = "💡 Useful Tips";
+
+    const tipsContent = document.createElement("div");
+    tipsContent.className = "commuting-tips";
+    tipsContent.innerHTML = `
+      <ul>
+        <li><strong>Book transportation in advance</strong> during peak season (July-August)</li>
+        <li><strong>Check seasonal schedules</strong> - some bus routes only run in summer</li>
+        <li><strong>Arrive early</strong> at Lago di Braies to secure parking</li>
+        <li><strong>Consider staying overnight</strong> near the start/end points</li>
+        <li><strong>Pack light</strong> - you'll need to carry everything on public transport</li>
+        <li><strong>Have backup plans</strong> - weather can affect transportation</li>
+      </ul>
+    `;
+
+    tipsSection.appendChild(tipsTitle);
+    tipsSection.appendChild(tipsContent);
+
+    commutingList.appendChild(startSection);
+    commutingList.appendChild(endSection);
+    commutingList.appendChild(tipsSection);
+
+    content.appendChild(heading);
+    content.appendChild(commutingList);
 
     return content;
   }
